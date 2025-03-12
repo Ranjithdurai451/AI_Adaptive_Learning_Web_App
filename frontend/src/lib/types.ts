@@ -44,15 +44,17 @@ export interface Exercise {
 }
 
 export interface Roadmap {
+  title: string
   skillId: string
   description: string
   prerequisites: string[]
   steps: {
+    skillId: string;
+    subTopics: string[]
     title: string
     description: string
   }[]
   projects: Project[]
-  exercises: Exercise[]
 }
 
 export interface TopicExplanation {

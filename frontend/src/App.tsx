@@ -3,6 +3,7 @@ import RootLayout from './Layouts/Root/RootLayout';
 import MainQuiz from './features/quiz/routes/MainQuiz';
 import MainRoadMap from './features/roadmap/routes/MainRoadMap';
 import SkillSelector from './Layouts/Root/components/SkillSelector';
+import { ThemeProvider } from './components/ui/ThemeProvider';
 
 const router = createBrowserRouter([
   {
@@ -26,7 +27,10 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  return <RouterProvider router={router}></RouterProvider>;
+  return (<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <RouterProvider router={router}></RouterProvider>
+
+  </ThemeProvider >);
 }
 
 export default App;

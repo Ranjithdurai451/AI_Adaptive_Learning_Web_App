@@ -77,7 +77,7 @@ export default function SkillSelector() {
     if (prerequisiteTopics.length > 0) {
       navigate(`/quiz?selectedSkill=${selectedSkill?.id}`);
     } else {
-      navigate(`/roadmap?selectedSkill=${selectedSkill?.id}`);
+      navigate(`/roadmap?selectedSkill=${selectedSkill?.id}&score=100`);
     }
   };
 
@@ -102,9 +102,9 @@ export default function SkillSelector() {
   };
 
   return (
-    <div className="w-full min-h-screen flex justify-center items-center p-4">
+    <div className="w-full h-full flex justify-center items-center p-4">
       <Card className="w-full max-w-[420px]">
-        <CardHeader className="p-4 md:p-6 space-y-4">
+        <CardHeader className="p-4 md:p-6 space-y-2">
           <div>
             <CardTitle className="text-lg md:text-xl">
               Select a Technical Skill
@@ -134,7 +134,7 @@ export default function SkillSelector() {
           </div>
         </CardHeader>
 
-        <CardContent className="p-4 md:p-6 pt-0 space-y-4">
+        <CardContent className="px-4 md:px-6 pt-0 space-y-4">
           <div className="relative">
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>

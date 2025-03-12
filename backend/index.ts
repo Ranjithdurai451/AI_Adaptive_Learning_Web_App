@@ -14,10 +14,10 @@ app.use(express.json());
 
 
 
-app.post("/api/generate_quiz", async (req, res) => {
+app.get("/api/generate_quiz", async (req, res) => {
     console.log("Triggered");
     try {
-        const { topic } = req.body;
+        const topic = req.query.topic as string;
         if (!topic) res.status(400).json({ error: "Topic is required" });
 
         const prerequisiteTopics = prerequisites[topic] || [];
@@ -26,15 +26,12 @@ app.post("/api/generate_quiz", async (req, res) => {
             const prerequisiteQuiz = await generateQuiz(
                 prerequisiteTopics.join(", ")
             );
-            res.json({
-                prerequisites: prerequisiteTopics,
-                prerequisiteQuiz,
-            });
+            res.json(prerequisiteQuiz);
         }
 
         const mainQuiz = await generateQuiz(topic);
 
-        res.json({ quiz: mainQuiz });
+        res.json(mainQuiz);
     } catch (error) {
         console.error("Error generating quiz:", error);
         res.status(500).json({ error: "Error generating quiz" });
@@ -43,11 +40,18 @@ app.post("/api/generate_quiz", async (req, res) => {
 
 
 
-
-app.post("/api/generate_roadmap", async (req, res) => {
+app.get("/api/generate_roadmap", async (req, res) => {
     try {
-        const { score, topic } = req.body;
-        console.log("Received Request:", req.body); // Node.js (Express)
+        const topic = req.query.topic as string;
+        const score = Number(req.query.score) || 0;
+
+        console.log("Topic:", topic);
+        console.log("Score:", score);
+
+        if (!topic) {
+            res.status(400).json({ error: "Topic are required" });
+        }
+
 
         const roadmapData = await generateRoadmap(score, topic);
         res.json(roadmapData);
@@ -58,7 +62,9 @@ app.post("/api/generate_roadmap", async (req, res) => {
 });
 
 
+
 const port = process.env.PORT || 3000;
+// const port = 3000;
 
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);

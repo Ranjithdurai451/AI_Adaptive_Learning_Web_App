@@ -11,7 +11,7 @@ const axiosObj = axios.create({
 export async function generateQuiz(topic: string) {
     try {
 
-        const response = await axiosObj.post("/generate_quiz", { topic });
+        const response = await axiosObj.get(`/generate_quiz?topic=${topic}`);
         return response.data;
     } catch (error) {
         console.error("Error generating quiz:", error);
@@ -22,7 +22,7 @@ export async function generateQuiz(topic: string) {
 export async function generateRoadmap(topic: string, score: number) {
     try {
 
-        const response = await axiosObj.post("/generate_roadmap", { topic, score });
+        const response = await axiosObj.get(`/generate_roadmap?topic=${topic}&score=${score}`);
         return response.data;
     } catch (error) {
         console.error("Error generating quiz:", error);

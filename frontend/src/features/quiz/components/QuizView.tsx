@@ -17,7 +17,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNavigate } from 'react-router';
-import { skills } from '@/lib/data';
 
 interface QuizViewProps {
   skillName: string;
@@ -78,7 +77,7 @@ export default function QuizView({
   };
 
   const onComplete = (passed: boolean) => {
-    navigate(`/roadmap?selectedSkill=${skillName}:score=${calculateScore()}`);
+    navigate(`/roadmap?selectedSkill=${skillName}&score=${calculateScore()}`);
   };
 
   if (showResults) {

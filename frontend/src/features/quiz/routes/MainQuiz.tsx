@@ -18,8 +18,8 @@ const MainQuiz = () => {
     const data = generateQuiz(selectedSkill || '');
     console.log(selectedSkill);
     data.then((response) => {
-      setQuizData(response.prerequisiteQuiz.questions);
-      console.log(response.prerequisiteQuiz.questions);
+      setQuizData(response.questions);
+      console.log(response.questions);
       setTimeout(() => {
         setIsLoading(false);
       }, 2000);

@@ -5,7 +5,7 @@ export const prerequisites: { [key: string]: string[] } = {
     node: ["javascript"],
     express: ["node"],
     mongodb: ["databases", "json"],
-    react: ["javascript", "css"],
+    react: ["html", "css", "javascript"],
 };
 
 export const basicTopics = ["HTML", "CSS", "JavaScript", "Java"];

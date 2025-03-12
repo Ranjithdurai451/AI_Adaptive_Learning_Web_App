@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 import { generateQuiz, generateRoadmap } from '@/lib/actions';
 import { Questions, Roadmap } from '@/lib/types';
 import Loader from '../../../Layouts/Root/components/Loader';
-import RoadmapView from '../components/RoadmapvView';
-import { skills } from '@/lib/data';
+import { roadmaps, skills } from '@/lib/data';
+import RoadmapView from '../components/RoadmapView';
 
 const MainRoadMap = () => {
   const navigate = useNavigate();
@@ -23,12 +23,16 @@ const MainRoadMap = () => {
   useEffect(() => {
     const data = generateRoadmap(selectedSkill || '', score || 0);
     data.then((response) => {
-      setroadmapData(response.roadmap[0]);
+      setroadmapData(response.roadmap);
       setTimeout(() => {
         setIsLoading(false);
       }, 2000);
     });
-  }, [selectedSkill]);
+    // setroadmapData(roadmaps);
+    // setTimeout(() => {
+    //   setIsLoading(false);
+    // }, 2000);
+  }, []);
 
   return (
     <>
@@ -37,28 +41,22 @@ const MainRoadMap = () => {
           text={`🚀 Designing your personalized learning roadmap... Get ready to level up! ⏳`}
         />
       ) : (
-        <RoadmapView
-          skill={
-            skills.find((skill) => skill.id === selectedSkill) || {
-              id: '0',
-              name: '',
-              level: 'basic',
+        <div className="">
+          <RoadmapView
+            skill={selectedSkill || ''}
+            roadmap={
+              roadmapData || {
+                title: '',
+                skillId: '',
+                description: '',
+                prerequisites: [],
+                steps: [],
+                projects: [],
+              }
             }
-          }
-          roadmap={
-            roadmapData || {
-              skillId: '',
-              description: '',
-              prerequisites: [],
-              steps: [],
-              projects: [],
-              exercises: [],
-            }
-          }
-          onBack={() => {}}
-          preferredLanguage="English"
-          quizPassed={true}
-        />
+            preferredLanguage="English"
+          />
+        </div>
       )}
     </>
   );

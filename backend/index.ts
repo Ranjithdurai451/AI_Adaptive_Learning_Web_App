@@ -1,6 +1,6 @@
 import express from 'express';
 import { prerequisites } from './lib/data';
-import { generateQuiz } from './lib/utils';
+import { generateQuiz, generateRoadmap } from './lib/utils';
 import cors from 'cors';
 
 
@@ -40,10 +40,25 @@ app.post("/api/generate_quiz", async (req, res) => {
         res.status(500).json({ error: "Error generating quiz" });
     }
 });
+
+
+
+
+app.post("/api/generate_roadmap", async (req, res) => {
+    try {
+        const { score, topic } = req.body;
+        console.log("Received Request:", req.body); // Node.js (Express)
+
+        const roadmapData = await generateRoadmap(score, topic);
+        res.json(roadmapData);
+    } catch (error) {
+        console.error("Error generating roadmap:", error);
+        res.status(500).json({ error: "Error generating roadmap" });
+    }
+});
+
+
 const port = process.env.PORT || 3000;
-
-
-
 
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);

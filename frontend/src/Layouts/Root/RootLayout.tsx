@@ -1,14 +1,14 @@
-import { Link, Outlet } from "react-router";
+import { Link, Outlet } from 'react-router';
 
 const RootLayout = () => {
   return (
-    <div className="w-dvw h-dvh  flex  flex-col">
-      <header className="p-3">
-        {/* <Link to={'/'} className="text-black font-bold  text-3xl">
+    <div className="w-dvw h-dvh  flex  flex-col overflow-hidden ">
+      <header className="p-3  bg-transparent">
+        <Link to={'/'} className=" text-black font-bold  text-3xl">
           SparkLearn
-        </Link> */}
+        </Link>
       </header>
-      <div className="w-full flex justify-center items-center h-full p-5">
+      <div className="w-full  flex-grow overflow-y-auto ">
         <Outlet />
       </div>
     </div>

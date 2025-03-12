@@ -19,3 +19,15 @@ export async function generateQuiz(topic: string) {
     }
 }
 
+export async function generateRoadmap(topic: string, score: number) {
+    try {
+
+        const response = await axiosObj.post("/generate_roadmap", { topic, score });
+        return response.data;
+    } catch (error) {
+        console.error("Error generating quiz:", error);
+
+    }
+}
+
+

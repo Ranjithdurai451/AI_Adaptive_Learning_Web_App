@@ -1,11 +1,13 @@
-import { useSearchParams } from 'react-router';
-import QuizLoader from '../components/QuizLoader';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useEffect, useState } from 'react';
 import { generateQuiz } from '@/lib/actions';
 import QuizView from '../components/QuizView';
 import { Questions } from '@/lib/types';
+import Loader from '../../../Layouts/Root/components/Loader';
+import { skills } from '@/lib/data';
 
 const MainQuiz = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -16,8 +18,8 @@ const MainQuiz = () => {
     const data = generateQuiz(selectedSkill || '');
     console.log(selectedSkill);
     data.then((response) => {
-      setQuizData(response.quiz.questions);
-      console.log(response.quiz.questions);
+      setQuizData(response.prerequisiteQuiz.questions);
+      console.log(response.prerequisiteQuiz.questions);
       setTimeout(() => {
         setIsLoading(false);
       }, 2000);
@@ -25,18 +27,21 @@ const MainQuiz = () => {
   }, [selectedSkill]);
 
   return (
-    <div>
+    <>
       {isLoading ? (
-        <QuizLoader />
+        <Loader
+          text={`Generating a to evaluate your skills... Get ready to learn smarter!🚀...`}
+        />
       ) : (
         <QuizView
           Questions={quizData}
           skillName={selectedSkill || ''}
-          onComplete={() => {}}
-          onBack={() => {}}
+          onBack={() => {
+            navigate('/');
+          }}
         />
       )}
-    </div>
+    </>
   );
 };
 

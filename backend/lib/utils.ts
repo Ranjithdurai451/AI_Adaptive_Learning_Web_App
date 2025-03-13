@@ -165,7 +165,6 @@ Format:
     // console.log("AI Response:", roadmapText); // Debugging log
 
     const parsedRoadmap = JSON.parse(roadmapText);
-    console.log("Parsed Roadmap:", parsedRoadmap); // Debugging log
     // Ensure roadmap is always an array
     // if (!Array.isArray(parsedRoadmap.roadmap)) {
     //   console.error("Roadmap is not an array:", parsedRoadmap);

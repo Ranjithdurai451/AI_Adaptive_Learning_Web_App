@@ -33,7 +33,7 @@ export default function RootLayout() {
           </div>
         </header>
 
-        <main className="p-4 md:p-6 flex-grow overflow-auto z-3 ">
+        <main className="p-4 md:p-6 flex-grow overflow-auto z-3 custom-scrollbar">
           <Outlet />
         </main>
       </div>

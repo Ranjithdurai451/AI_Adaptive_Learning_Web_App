@@ -1,10 +1,4 @@
-import type {
-  Quiz,
-  Roadmap,
-  Skill,
-  VideoRecommendation,
-  TopicExplanation,
-} from "./types";
+import type { Roadmap, Skill } from "./types";
 
 export const skills: Skill[] = [
   { id: "html", name: "HTML", level: "basic" },

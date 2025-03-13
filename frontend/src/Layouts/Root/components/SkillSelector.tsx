@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { ScrollableFilterButtons } from "./ScrollableFilterButtons";
 import { useNavigate } from "react-router";
+import RightArrow from "@/components/ui/RightArrow";
 
 export default function SkillSelector() {
   const navigate = useNavigate();
@@ -102,8 +103,29 @@ export default function SkillSelector() {
   };
 
   return (
-    <div className="w-full h-full flex justify-center items-center p-4">
-      <Card className="w-full max-w-[420px]">
+    <div className="w-full h-full flex flex-col items-center justify-between gap-20 p-4">
+      <div className="flex flex-col items-center p-5 pb-[25px] bg-black/5 mt-5 rounded-md backdrop-blur-[4px] border-b border-border">
+        <p className="bg-primary p-[0.2rem] rounded-md text-[0.875rem] px-3 py-1 font-medium text-muted">
+          AI-Powered Learning
+        </p>
+        <h3 className="text-[3rem] font-bold text-center capitalize leading-[1] p-4">
+          Master Technical Skills <br />
+          <span className="dark:text-white/30 text-black/30">
+            with Personalized Roadmaps
+          </span>
+        </h3>
+        <p className="text-[1.125rem] text-center capitalize max-w-[42rem] pt-2 pb-6">
+          Tell us what you want to learn, and we'll create a customized learning
+          path with hand-picked resources tailored to your skill level and
+          preferences.
+        </p>
+        <button className=" cursor-pointer shadow-lg hover:scale-[1.1] transition-all flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground">
+          {" "}
+          Get Started
+          <RightArrow />
+        </button>
+      </div>
+      <Card className="w-full max-w-[420px] mb-[20px]">
         <CardHeader className="p-4 md:p-6 space-y-2">
           <div>
             <CardTitle className="text-lg md:text-xl">
@@ -176,7 +198,7 @@ export default function SkillSelector() {
                     />
                   </div>
 
-                  <div className="overflow-y-auto flex-1 min-h-0">
+                  <div className="overflow-y-auto custom-scrollbar flex-1 min-h-0">
                     <motion.div
                       className="grid grid-cols-1 sm:grid-cols-2 gap-2"
                       variants={container}

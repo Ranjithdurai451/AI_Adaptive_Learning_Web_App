@@ -16,6 +16,7 @@
     "@google/generative-ai": "^0.24.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "backend": "file:",
     "cors": "^2.8.5",
     "express": "^4.21.2"
   }

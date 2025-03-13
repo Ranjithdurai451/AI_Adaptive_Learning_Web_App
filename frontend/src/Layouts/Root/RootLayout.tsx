@@ -45,12 +45,12 @@ export default function RootLayout() {
         <SparkLoader onComplete={handleLoaderComplete} />
       ) : (
         <>
-          {location.pathname === "/" && <BackgroundPaths />}
+          {/* {location.pathname === "/" && <BackgroundPaths />} */}
           <div
             className={cn(
-              "min-h-screen transition-opacity duration-700 ease-out",
+              " transition-opacity duration-700 ease-out",
               contentVisible ? "opacity-100" : "opacity-0",
-              "h-dvh w-dvw overflow-hidden flex flex-col"
+              "h-dvh w-dvw  flex flex-col"
             )}
           >
             <header className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm border-b border-border flex justify-between items-center p-4">

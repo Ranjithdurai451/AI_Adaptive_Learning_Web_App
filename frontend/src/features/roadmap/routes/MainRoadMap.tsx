@@ -23,15 +23,10 @@ const MainRoadMap = () => {
     const data = generateRoadmap(selectedSkill || "", score || 0);
     data.then((response) => {
       setroadmapData(response.roadmap);
-      //   setTimeout(() => {
-      //     setIsLoading(false);
-      //   }, 1000);
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
     });
-    // setroadmapData(roadmaps);
-    // setTimeout(() => {
-    //   setIsLoading(false);
-    // }, 2000);
-    setIsLoading(false);
   }, []);
 
   return (

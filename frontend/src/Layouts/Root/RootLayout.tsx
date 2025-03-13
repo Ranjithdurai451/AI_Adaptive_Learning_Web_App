@@ -53,7 +53,7 @@ export default function RootLayout() {
               "h-dvh w-dvw  flex flex-col"
             )}
           >
-            <header className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm border-b border-border flex justify-between items-center p-4">
+            <header className="shadow-md  sticky top-0 z-10 bg-background/90 backdrop-blur-sm border-b border-border flex justify-between items-center p-4">
               <Link to={"/"} className=" text-xl font-bold">
                 SparkLearn
               </Link>

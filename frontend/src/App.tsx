@@ -4,6 +4,7 @@ import MainQuiz from './features/quiz/routes/MainQuiz';
 import MainRoadMap from './features/roadmap/routes/MainRoadMap';
 import SkillSelector from './Layouts/Root/components/SkillSelector';
 import { ThemeProvider } from './components/ui/ThemeProvider';
+import Home from './Layouts/Root/components/Home';
 
 const router = createBrowserRouter([
   {
@@ -12,6 +13,10 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
+        element: <Home />
+      },
+      {
+        path: '/skill-selector',
         element: <SkillSelector />
       },
       {

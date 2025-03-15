@@ -8,17 +8,12 @@ export const skills: Skill[] = [
   { id: "express", name: "Express", level: "advanced" },
   { id: "mongodb", name: "MongoDB", level: "advanced" },
   { id: "react", name: "React", level: "advanced" },
-  { id: "javascript", name: "JavaScript", level: "intermediate" },
-  { id: "node", name: "Node.js", level: "intermediate" },
-  { id: "express", name: "Express", level: "advanced" },
-  { id: "mongodb", name: "MongoDB", level: "advanced" },
-  { id: "react", name: "React", level: "advanced" },
-  { id: "javascript", name: "JavaScript", level: "intermediate" },
-  { id: "node", name: "Node.js", level: "intermediate" },
-  { id: "express", name: "Express", level: "advanced" },
-  { id: "mongodb", name: "MongoDB", level: "advanced" },
-  { id: "react", name: "React", level: "advanced" },
-  { id: "go", name: "Go", level: "advanced" },
+  { id: 'java', name: 'Java', level: 'advanced' },
+  { id: 'go', name: 'Go', level: 'intermediate' },
+  { id: 'flutter', name: 'Flutter', level: 'advanced' },
+  { id: 'dsa', name: 'dsa', level: 'advanced' },
+  { id: 'python', name: 'python', level: 'advanced' },
+  { id: 'honojs', name: 'honojs', level: 'advanced' }
 ];
 
 export const prerequisites: { [key: string]: string[] } = {

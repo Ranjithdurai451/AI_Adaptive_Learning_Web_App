@@ -3,9 +3,11 @@ import { model } from "./model";
 
 // Function to generate quiz
 export async function generateQuiz(topic: string) {
+  try {
 
-  const total_number_of_questions = 1;
-  const prompt = `
+
+    const total_number_of_questions = 1;
+    const prompt = `
         Generate a JSON quiz for ${topic} with exactly ${total_number_of_questions} questions these structured categories:
         - Basic Concept (30%)
         - Code Interpretation (30%)
@@ -23,11 +25,19 @@ export async function generateQuiz(topic: string) {
           ]
         }`;
 
-  const result = await model.generateContent(prompt);
-  const responseText = result.response.text().replace(/```json|```/g, "").trim();
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text().replace(/```json|```/g, "").trim();
 
-  // return responseText;
-  return JSON.parse(responseText);
+    // return responseText;
+    return JSON.parse(responseText);
+  } catch (error) {
+    console.error("Error generating topic explanation:", error);
+    return {
+      error: "Failed to generate explanation. Please try again.",
+      details: error,
+    };
+
+  }
 }
 
 
@@ -114,6 +124,7 @@ Ensure:
 - Give proper progression from scratch to pro.
 - Include projects at the end.
 
+
 Format:
 {
   "roadmap": {
@@ -173,7 +184,106 @@ Format:
 
     return parsedRoadmap;
   } catch (error) {
-    console.error("Error parsing roadmap JSON:", error);
-    return { roadmap: {} }; // Return empty array on failure
+    console.error("Error generating topic explanation:", error);
+    return {
+      error: "Failed to generate explanation. Please try again.",
+      details: error,
+    };
+
   }
 }
+
+
+
+export async function generateTopicExplanation(topic: string, stepTitle: string) {
+
+
+  // Create a prompt that requests specifically formatted content
+  const prompt = `
+   Generate a comprehensive educational explanation for the "${topic}" under the step "${stepTitle}". 
+   Ensure:
+   - The response is structured in valid JSON format.
+   -  The data like content,example,code,resources should be ${stepTitle} basic to pro level in that language or technology or concept.This is the main thing to ensure And only do this if ${stepTitle} is langauage or framework or technology,other everything should should be content of this main topic ${topic}.
+   - Makesure that given json data is must can be parsed and used in the frontend.
+   - And this information and content generated should be simple and easy to understand for the user. 
+   
+      The response must be formatted as valid JSON with this exact structure:
+      {
+        "id": "${stepTitle.toLowerCase().replace(/\s+/g, "-")}",
+        "skillId": "${stepTitle.toLowerCase().split(/\s+/)[0]}",
+        "title": "${stepTitle}",
+        "difficulty": "Choose an appropriate difficulty level (Beginner, Intermediate, or Advanced)",
+        "description": "Write a concise 2-3 sentence overview of ${stepTitle}.",
+        "estimatedReadingTime": "Estimate appropriate reading time in minutes",
+        "lastUpdated": "Current date in Month DD, YYYY format",
+        "author": "${stepTitle} Team",
+        "sections": [
+          {
+            "id": "section-1-id",
+            "title": "First Main Concept of ${stepTitle}",
+            "content": "Write 3-4 detailed paragraphs explaining this concept. Include technical details, history if relevant, and explain why this concept is important.",
+
+              "example":{
+              "code": "Provide a practical code example demonstrating this concept if applicable.",
+              "language": "Choose a programming language (JavaScript, Python, etc.)",
+              "filename": "example.js or it can be title of the code"
+              },
+
+            "tips": [
+              "Provide 3 practical tips for working with this concept",
+              "Each tip should be specific and actionable",
+              "Include best practices"
+            ]
+          },
+          {
+            "id": "section-2-id",
+            "title": "Second Main Concept of ${stepTitle}",
+            "content": "Write 3-4 detailed paragraphs explaining this concept.",
+           "example":{
+              "code": "Provide a practical code example demonstrating this concept if applicable.",
+              "language": "Choose a programming language (JavaScript, Python, etc.)",
+              "filename": "example.js or it can be title of the code"
+              },
+            "tips": [
+              "Provide 3 practical tips for working with this concept",
+              "Each tip should be specific and actionable",
+              "Include best practices"
+            ]
+          },
+          /* Include at least 5-7 sections covering the main concepts of ${stepTitle} */
+        ],
+        "resources": [
+          {
+            "title": "Official ${stepTitle} Documentation",
+            "url": "https://example.com/${stepTitle.toLowerCase()}/docs"
+          },
+          {
+            "title": "Recommended ${stepTitle} Tutorial",
+            "url": "https://example.com/tutorials/${stepTitle.toLowerCase()}"
+          },
+          /* Include 3-5 relevant resources */
+        ]
+      }`;
+
+  try {
+    // In a real implementation, this would call an AI model
+    const result = await model.generateContent(prompt);
+    console.log("AI Response:", result.response.text()); // Debugging log
+    // Clean the response text by removing any code block formatting
+    let responseText = result.response
+      .text()
+      .replace(/```json|```/g, "")
+      .trim();
+
+    // Parse and return the JSON
+    return JSON.parse(responseText);
+  } catch (error) {
+    console.error("Error generating topic explanation:", error);
+    return {
+      error: "Failed to generate explanation. Please try again.",
+      details: error,
+    };
+  }
+}
+
+

@@ -29,5 +29,26 @@ export async function generateRoadmap(topic: string, score: number) {
 
     }
 }
+export async function generateDetailedExplanation(topic: string, stepTitle: string) {
+    try {
+
+        const response = await axiosObj.get(`/generate_topic_explanation?topic=${topic}&stepTitle=${stepTitle}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error generating quiz:", error);
+
+    }
+}
+
+export async function clearCache() {
+    try {
+
+        const response = await axiosObj.get(`/api/clear_cache`);
+        console.log(response.data);
+    } catch (error) {
+        console.error("Error generating quiz:", error);
+
+    }
+}
 
 

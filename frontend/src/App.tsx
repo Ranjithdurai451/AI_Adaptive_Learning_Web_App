@@ -5,6 +5,8 @@ import MainRoadMap from './features/roadmap/routes/MainRoadMap';
 import SkillSelector from './Layouts/Root/components/SkillSelector';
 import { ThemeProvider } from './components/ui/ThemeProvider';
 import Home from './Layouts/Root/components/Home';
+import RoadmapLayout from './features/roadmap/routes/RoadmapLayout';
+import TopicExplanation from './features/roadmap/routes/TopicExplanation';
 
 const router = createBrowserRouter([
   {
@@ -13,29 +15,40 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Home />
+        element: <Home />,
       },
       {
         path: '/skill-selector',
-        element: <SkillSelector />
+        element: <SkillSelector />,
       },
       {
         path: '/quiz',
-        element: <MainQuiz />
-      }, {
+        element: <MainQuiz />,
+      },
+      {
         path: '/roadmap',
-        element: <MainRoadMap />
-      }
-
-    ]
+        element: <RoadmapLayout />,
+        children: [
+          {
+            index: true,
+            element: <MainRoadMap />,
+          },
+          {
+            path: '/roadmap/:title',
+            element: <TopicExplanation />,
+          },
+        ],
+      },
+    ],
   },
 ]);
 
 function App() {
-  return (<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-    <RouterProvider router={router}></RouterProvider>
-
-  </ThemeProvider >);
+  return (
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <RouterProvider router={router}></RouterProvider>
+    </ThemeProvider>
+  );
 }
 
 export default App;

@@ -1,3 +1,4 @@
+import CodeBlock from '@/components/ui/CodeBlock'
 import RightArrow from '@/components/ui/RightArrow'
 import { Link } from 'react-router'
 

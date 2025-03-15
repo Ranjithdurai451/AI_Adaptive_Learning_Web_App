@@ -1,9 +1,9 @@
-import { useNavigate, useSearchParams } from "react-router";
-import { useEffect, useState } from "react";
-import { generateRoadmap } from "@/lib/actions";
-import { Roadmap } from "@/lib/types";
-import Loader from "../../../Layouts/Root/components/Loader";
-import RoadmapView from "../components/RoadmapView";
+import { Navigate, useNavigate, useSearchParams } from 'react-router';
+import { useEffect, useState } from 'react';
+import { generateRoadmap } from '@/lib/actions';
+import { Roadmap } from '@/lib/types';
+import Loader from '../../../Layouts/Root/components/Loader';
+import RoadmapView from '../components/RoadmapView';
 
 const MainRoadMap = () => {
   const navigate = useNavigate();
@@ -11,16 +11,15 @@ const MainRoadMap = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [roadmapData, setroadmapData] = useState<Roadmap>();
-  const selectedSkill = searchParams.get("selectedSkill");
-
+  const selectedSkill = searchParams.get('selectedSkill');
+  console.log(selectedSkill);
   if (!selectedSkill) {
-    navigate("/");
-    console.error("No skill selected");
+    return <Navigate to="/" />;
   }
-  const score = Number(searchParams.get("score"));
 
+  const score = Number(searchParams.get('score') || '0');
   useEffect(() => {
-    const data = generateRoadmap(selectedSkill || "", score || 0);
+    const data = generateRoadmap(selectedSkill || '', score || 0);
     data.then((response) => {
       setroadmapData(response.roadmap);
       setTimeout(() => {
@@ -38,12 +37,13 @@ const MainRoadMap = () => {
       ) : (
         <div className="">
           <RoadmapView
-            skill={selectedSkill || ""}
+            score={score}
+            skill={selectedSkill || ''}
             roadmap={
               roadmapData || {
-                title: "",
-                skillId: "",
-                description: "",
+                title: '',
+                skillId: '',
+                description: '',
                 prerequisites: [],
                 steps: [],
                 projects: [],

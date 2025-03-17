@@ -20,86 +20,68 @@ import { Link, useParams, useSearchParams } from 'react-router';
 import Loader from '@/Layouts/Root/components/Loader';
 import { generateDetailedExplanation } from '@/lib/actions';
 import CodeBlock from '@/components/ui/CodeBlock';
-
+import { LearningResource } from '@/lib/types';
+export const renderTextWithCodeHighlights = (text: string) => {
+  return text
+    .split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*[^*\s]\*|`[^`]+`|\*)/g) // Ensure correct splitting
+    .map((part, index) => {
+      if (part === '*') {
+        return <br key={index} />; // Insert a new line
+      }
+      if (/^\*\*(.+)\*\*$/.test(part)) {
+        return (
+          <strong className="  underline underline-offset-2" key={index}>
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (/^\*(.+)\*$/.test(part)) {
+        return <em key={index}>{part.slice(1, -1)}</em>;
+      }
+      if (/^`(.+)`$/.test(part)) {
+        return (
+          <code
+            key={index}
+            className=" mx-1 bg-gray-200 dark:bg-gray-900 px-2 py-0.5 rounded"
+          >
+            {part.slice(1, -1)}
+          </code>
+        );
+      }
+      return part;
+    });
+};
 export default function TopicExplanation() {
   const [searchParams] = useSearchParams();
   const topic = searchParams.get('topic') || '';
   const title = useParams().title as string;
   const preferredLanguage = searchParams.get('preferredLanguage') as string;
   const score = Number(searchParams.get('score'));
+  const [topicData, setTopicData] = useState<LearningResource | null>(
+  );
+
   useEffect(() => {
     // Fetch topic data based on the topic ID
     // console.log('Fetching topic explanation for:', topic, title);
 
     generateDetailedExplanation(topic, title).then((response) => {
-      console.log(response);
+      // console.log(response);
       setTopicData(response);
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
     });
   }, []);
-  const renderTextWithCodeHighlights = (text: string) => {
-    return text
-      .split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*[^*\s]\*|`[^`]+`|\*)/g) // Ensure correct splitting
-      .map((part, index) => {
-        if (part === '*') {
-          return <br key={index} />; // Insert a new line
-        }
-        if (/^\*\*(.+)\*\*$/.test(part)) {
-          return (
-            <strong className="  underline underline-offset-2" key={index}>
-              {part.slice(2, -2)}
-            </strong>
-          );
-        }
-        if (/^\*(.+)\*$/.test(part)) {
-          return <em key={index}>{part.slice(1, -1)}</em>;
-        }
-        if (/^`(.+)`$/.test(part)) {
-          return (
-            <code
-              key={index}
-              className=" mx-1 bg-gray-200 dark:bg-gray-900 px-2 py-0.5 rounded"
-            >
-              {part.slice(1, -1)}
-            </code>
-          );
-        }
-        return part;
-      });
-  };
-  const [topicData, setTopicData] = useState({
-    id: '',
-    skillId: '',
-    title: '',
-    difficulty: '',
-    description: '',
-    estimatedReadingTime: '',
-    lastUpdated: '',
-    sections: [
-      {
-        id: '',
-        title: '',
-        content: '',
-        example: {
-          code: '',
-          filename: '',
-          language: '',
-        },
-        tips: [''],
-      },
-    ],
-    resources: [
-      {
-        title: '',
-        url: '',
-      },
-    ],
-  });
+
+  useEffect(() => {
+    console.log(topicData)
+    if (topicData) {
+      setActiveSection(topicData?.sections[0]?.id);
+      console.log("Triggered")
+      setIsLoading(false);
+    }
+  }, [topicData])
+
   const [isLoading, setIsLoading] = useState(true);
   const [fontSize, setFontSize] = useState('medium');
-  const [activeSection, setActiveSection] = useState(topicData.sections[0].id);
+  const [activeSection, setActiveSection] = useState<string | null>();
   const [readingProgress, setReadingProgress] = useState(0);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
 
@@ -109,7 +91,7 @@ export default function TopicExplanation() {
 
   // Calculate reading progress and handle scroll
   useEffect(() => {
-    if (isLoading || !topicData.sections || topicData.sections.length === 0) {
+    if (topicData && isLoading || !topicData?.sections || topicData.sections.length === 0) {
       return;
     }
 
@@ -149,7 +131,7 @@ export default function TopicExplanation() {
         contentElement.removeEventListener('scroll', handleScroll);
       };
     }
-  }, [isLoading, topicData.sections]);
+  }, [isLoading, topicData]);
 
   // Handle font size
   const getFontSizeClass = () => {
@@ -220,7 +202,7 @@ export default function TopicExplanation() {
                         Table of Contents
                       </h2>
                       <div className="space-y-1">
-                        {topicData.sections.map((section, index) => (
+                        {topicData?.sections.map((section, index) => (
                           <div key={section.id} className="relative">
                             <Button
                               variant="ghost"
@@ -228,7 +210,7 @@ export default function TopicExplanation() {
                               className={cn(
                                 'w-full justify-start text-left pl-8 relative',
                                 activeSection === section.id &&
-                                  'text-primary font-medium'
+                                'text-primary font-medium'
                               )}
                               onClick={() => {
                                 scrollToSection(section.id);
@@ -266,10 +248,10 @@ export default function TopicExplanation() {
                       fontSize === 'small'
                         ? 'medium'
                         : fontSize === 'medium'
-                        ? 'large'
-                        : fontSize === 'large'
-                        ? 'x-large'
-                        : 'small'
+                          ? 'large'
+                          : fontSize === 'large'
+                            ? 'x-large'
+                            : 'small'
                     )
                   }
                 >
@@ -278,10 +260,10 @@ export default function TopicExplanation() {
                     {fontSize === 'small'
                       ? 'Small'
                       : fontSize === 'medium'
-                      ? 'Medium'
-                      : fontSize === 'large'
-                      ? 'Large'
-                      : 'X-Large'}
+                        ? 'Medium'
+                        : fontSize === 'large'
+                          ? 'Large'
+                          : 'X-Large'}
                   </span>
                 </Button>
               </div>
@@ -296,7 +278,7 @@ export default function TopicExplanation() {
                   Table of Contents
                 </h2>
                 <div className="pr-2 space-y-1">
-                  {topicData.sections.map((section, index) => (
+                  {topicData?.sections.map((section, index) => (
                     <div key={section.id} className="relative group">
                       {/* Active section indicator */}
                       {activeSection === section.id && (
@@ -325,7 +307,7 @@ export default function TopicExplanation() {
                           className={cn(
                             'h-4 w-4 absolute right-2 top-1/2 -translate-y-1/2 opacity-0 transition-opacity',
                             activeSection === section.id ||
-                              'group-hover:opacity-100'
+                            'group-hover:opacity-100'
                           )}
                         />
                       </Button>
@@ -337,7 +319,7 @@ export default function TopicExplanation() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">Reading Time</span>
                     <Badge variant="outline">
-                      {topicData.estimatedReadingTime}
+                      {topicData?.estimatedReadingTime}
                     </Badge>
                   </div>
 
@@ -365,18 +347,18 @@ export default function TopicExplanation() {
                   <div className="">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <Badge>
-                        {renderTextWithCodeHighlights(topicData.difficulty)}
+                        {renderTextWithCodeHighlights(topicData?.difficulty || "")}
                       </Badge>
                     </div>
 
                     <h1 className="mb-3 text-2xl font-bold tracking-tight sm:text-3xl">
-                      {renderTextWithCodeHighlights(topicData.title)}
+                      {renderTextWithCodeHighlights(topicData?.title || '')}
                     </h1>
                     <p className="text-muted-foreground">
-                      {topicData.description}
+                      {topicData?.description}
                     </p>
                   </div>
-                  {topicData.sections.map((section, index) => (
+                  {topicData?.sections.map((section, index) => (
                     <section
                       key={section.id}
                       id={section.id}
@@ -433,7 +415,7 @@ export default function TopicExplanation() {
                       Additional Resources
                     </h2>
                     <ul className="pl-5 space-y-3 list-disc">
-                      {topicData.resources.map((resource, index) => (
+                      {topicData?.resources.map((resource, index) => (
                         <li key={index}>
                           <a
                             href={resource.url}

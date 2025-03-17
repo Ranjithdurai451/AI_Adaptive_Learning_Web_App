@@ -43,12 +43,11 @@ export async function generateDetailedExplanation(topic: string, stepTitle: stri
 export async function clearCache() {
     try {
 
-        const response = await axiosObj.get(`/api/clear_cache`);
+        const response = await axiosObj.get(`/clear_cache`);
         console.log(response.data);
     } catch (error) {
         console.error("Error generating quiz:", error);
 
     }
 }
-
 

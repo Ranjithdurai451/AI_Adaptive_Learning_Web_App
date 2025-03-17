@@ -17,6 +17,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNavigate } from 'react-router';
+import { renderTextWithCodeHighlights } from '@/features/roadmap/routes/TopicExplanation';
 
 interface QuizViewProps {
   skillName: string;
@@ -117,13 +118,17 @@ export default function QuizView({
                         <XCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
                       )}
                       <div>
-                        <p className="font-medium">{question.question}</p>
+                        <p className="font-medium">
+                          {renderTextWithCodeHighlights(question.question)}
+                        </p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Your answer: {answers[index]}
+                          Your answer:{' '}
+                          {renderTextWithCodeHighlights(answers[index])}
                         </p>
                         {!isCorrect && (
                           <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                            Correct answer: {question.answer}
+                            Correct answer:{' '}
+                            {renderTextWithCodeHighlights(question.answer)}
                           </p>
                         )}
                       </div>
@@ -168,7 +173,9 @@ export default function QuizView({
           <Progress value={progress} className="h-2" />
 
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">{currentQuestion.question}</h3>
+            <h3 className="text-lg font-medium">
+              {renderTextWithCodeHighlights(currentQuestion.question)}
+            </h3>
 
             <RadioGroup
               value={selectedAnswer || ''}
@@ -178,7 +185,7 @@ export default function QuizView({
                 <div key={option} className="flex items-center space-x-2">
                   <RadioGroupItem value={option} id={option} />
                   <Label htmlFor={option} className="flex-1 py-2">
-                    {option}
+                    {renderTextWithCodeHighlights(option)}
                   </Label>
                 </div>
               ))}
@@ -200,7 +207,9 @@ export default function QuizView({
               <AlertDescription>
                 {isAnswerCorrect
                   ? 'Great job! Moving to the next question...'
-                  : `The correct answer is: ${currentQuestion.answer}`}
+                  : `The correct answer is: ${renderTextWithCodeHighlights(
+                      currentQuestion.answer
+                    )}`}
               </AlertDescription>
             </Alert>
           )}

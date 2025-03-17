@@ -1,8 +1,13 @@
 import CodeBlock from '@/components/ui/CodeBlock'
 import RightArrow from '@/components/ui/RightArrow'
+import { generateBatchExplainations } from '@/lib/actions'
+import { useEffect } from 'react'
 import { Link } from 'react-router'
 
 const Home = () => {
+  useEffect(() => {
+    // generateBatchExplainations();
+  }, [])
   return (
     <div className=' h-full w-full flex justify-center items-center'>
       <div className="flex shadow-md flex-col items-center p-5 pb-[25px] mt-5 rounded-md  border-b dark:border-b-white/10 border-b-black/20">

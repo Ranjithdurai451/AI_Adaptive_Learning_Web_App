@@ -1,3 +1,4 @@
+import { generateDetailedExplanation } from '@/lib/actions';
 import { Roadmap } from '@/lib/types';
 import { toSlug } from '@/lib/utils';
 import {
@@ -34,6 +35,7 @@ const RoadmapView = ({
   const [completedTopics, setCompletedTopics] = useState<
     Record<string, boolean>
   >({});
+
   const [progress, setProgress] = useState({
     completed: 0,
     total: 0,
@@ -148,7 +150,9 @@ const RoadmapView = ({
               {/* Step header (always visible) */}
               <div
                 className="flex justify-between items-center p-3 cursor-pointer hover:bg-muted/30 transition-colors duration-200"
-                onClick={() => toggleDay(item.title)}
+                onClick={() => {
+                  toggleDay(item.title);
+                }}
               >
                 <div className="flex flex-col gap-0.5 max-w-[85%]">
                   <h2 className="font-medium">{item.title}</h2>

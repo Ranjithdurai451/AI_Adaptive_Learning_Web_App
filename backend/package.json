@@ -13,12 +13,15 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@elysiajs/cors": "^1.2.0",
     "@google/generative-ai": "^0.24.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "backend": "file:",
     "cors": "^2.8.5",
+    "elysia": "^1.2.25",
     "express": "^4.21.2",
+    "p-limit": "^6.2.0",
     "redis": "^4.7.0"
   }
 }

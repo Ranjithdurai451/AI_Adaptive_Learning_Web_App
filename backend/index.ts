@@ -1,149 +1,187 @@
-import express from 'express';
 import { prerequisites } from './lib/data';
-import { generateQuiz, generateRoadmap, generateTopicExplanation } from './lib/utils';
-import cors from 'cors';
+import { fetchWithRetry, generateQuiz, generateRoadmap, generateTopicExplanation } from './lib/utils';
 import { createClient } from 'redis';
+import { Elysia } from 'elysia';
+import cors from '@elysiajs/cors';
+import pLimit from 'p-limit';
+
 const redisClient = createClient({
     url: process.env.REDIS_URL || ''
 });
-const app = express();
-app.use(cors({
-    origin: "*",
-}));
 
-app.use(express.json());
+await redisClient.connect(); // Ensure Redis is connected before using it
 
+const app = new Elysia({
+    serve: {
+        idleTimeout: 200
+    }
+});
 
+app.use(cors()); // Apply CORS middleware
+// app.use(Elysia.json()); // Ensure JSON parsing is handled
 
-app.get("/api/generate_quiz", async (req, res): Promise<any> => {
+// Generate Quiz API
+app.get("/api/generate_quiz", async ({ query }) => {
     try {
-        const topic = req.query.topic as string;
-        if (!topic) res.status(400).json({ error: "Topic is required" });
+        const topic = query.topic;
+        if (!topic) return { error: "Topic is required" };
+
         const cacheExists = await redisClient.get(topic);
         if (cacheExists) {
             console.log("Cache Hit!!");
-            return res.json(JSON.parse(cacheExists));
+            return JSON.parse(cacheExists);
         }
+
         const prerequisiteTopics = prerequisites[topic] || [];
+        const quizData = prerequisiteTopics.length > 0
+            ? await generateQuiz(prerequisiteTopics.join(", "))
+            : await generateQuiz(topic);
 
-        if (prerequisiteTopics.length > 0) {
-            const prerequisiteQuiz = await generateQuiz(
-                prerequisiteTopics.join(", ")
-            );
-            if (!prerequisiteQuiz.error) {
-                redisClient.set(topic, JSON.stringify(prerequisiteQuiz), {
-                    EX: 86400
-                });
-            }
-            return res.json(prerequisiteQuiz);
+        if (!quizData.error) {
+            redisClient.set(topic, JSON.stringify(quizData), { EX: 86400 });
         }
 
-        const mainQuiz = await generateQuiz(topic);
-        if (!mainQuiz.error) {
-            redisClient.set(topic, JSON.stringify(mainQuiz), {
-                EX: 86400
-            });
-        }
-        return res.json(mainQuiz);
+        return quizData;
     } catch (error) {
         console.error("Error generating quiz:", error);
-        return res.status(500).json({ error: "Error generating quiz" });
+        return { error: "Error generating quiz" };
     }
 });
 
-
-
-app.get("/api/generate_roadmap", async (req, res): Promise<any> => {
+// Generate Roadmap API
+app.get("/api/generate_roadmap", async ({ query }) => {
     try {
-        const topic = req.query.topic as string;
-        const score = Number(req.query.score) || 0;
+        const topic = query.topic;
+        const score = Number(query.score) || 0;
 
+        if (!topic) return { error: "Topic is required" };
 
-        if (!topic) {
-            return res.status(400).json({ error: "Topic are required" });
-        }
-        const cacheExists = await redisClient.get(`${topic}-${score}`);
+        const cacheKey = `${topic}-${score}`;
+        const cacheExists = await redisClient.get(cacheKey);
         if (cacheExists) {
             console.log("Cache Hit!!");
-            return res.json(JSON.parse(cacheExists));
+            return JSON.parse(cacheExists);
         }
-
 
         const roadmapData = await generateRoadmap(score, topic);
         if (!roadmapData.error) {
-            redisClient.set(`${topic}-${score}`, JSON.stringify(roadmapData), {
-                EX: 86400
-            });
+            redisClient.set(cacheKey, JSON.stringify(roadmapData), { EX: 86400 });
         }
-        return res.json(roadmapData);
+
+        return roadmapData;
     } catch (error) {
         console.error("Error generating roadmap:", error);
-        return res.status(500).json({ error: "Error generating roadmap" });
+        return { error: "Error generating roadmap" };
     }
 });
 
-app.get("/api/generate_topic_explanation", async (req, res): Promise<any> => {
+// Generate Topic Explanation API
+app.get("/api/generate_topic_explanation", async ({ query }) => {
     try {
-        const topic = req.query.topic as string;
-        const stepTitle = req.query.stepTitle as string;
-        // Validate input
-        if (!topic || !stepTitle) {
-            return res
-                .status(400)
-                .json({ error: "Topic and Step Title are required." });
-        }
-        const cacheExists = await redisClient.get(`${topic}-${stepTitle}`);
+        const { topic, stepTitle } = query;
+        if (!topic || !stepTitle) return { error: "Topic and Step Title are required." };
+
+        const cacheKey = `${topic}-${stepTitle}`;
+        const cacheExists = await redisClient.get(cacheKey);
         if (cacheExists) {
             console.log("Cache Hit!!");
-            return res.json(JSON.parse(cacheExists));
+            return JSON.parse(cacheExists);
         }
 
+        // Call the retry function
         const explanation = await generateTopicExplanation(topic, stepTitle);
-        if (explanation.error) {
-            return res.status(400).json(explanation);
-        }
 
+        // Store the successful response in cache
+        if (explanation && !explanation.error)
+            await redisClient.set(cacheKey, JSON.stringify(explanation), { EX: 86400 });
 
-
-        redisClient.set(`${topic}-${stepTitle}`, JSON.stringify(explanation), {
-            EX: 86400
-        });
-        return res.json(explanation);
+        return explanation;
     } catch (error) {
         console.error("API Error:", error);
-        return res.status(500).json({ error: "Internal Server Error" });
+        return { error: "Internal Server Error" };
     }
 });
 
-app.get('/api/clear_cache', async (req, res) => {
+app.get("/api/generate_batch_explanations", async ({ query }) => {
     try {
-        await redisClient.flushAll(); // Clears all keys in Redis
+        const { topic, stepTitles } = query as { topic: string; stepTitles: string };
+        if (!topic || !stepTitles) {
+            return { error: "Topic and stepTitles (comma-separated) are required." };
+        }
+
+        const stepTitlesArray = stepTitles.split(",").map(title => title.trim());
+        const redisKeys = stepTitlesArray.map(title => `${topic}-${title}`);
+
+        // 🚀 Step 1: Optimize Redis Lookup (Use `mget` instead of `multi()`)
+        const cachedData = await redisClient.mGet(redisKeys);
+
+        let results: Record<string, any> = {};
+        let missingTitles: string[] = [];
+
+        // 🚀 Step 2: Separate Cached & Missing Data Efficiently
+        cachedData.forEach((cachedItem, index) => {
+            if (cachedItem) {
+                results[stepTitlesArray[index]] = JSON.parse(cachedItem);
+            } else {
+                missingTitles.push(stepTitlesArray[index]);
+            }
+        });
+
+        // 🚀 Step 3: Fetch Missing Explanations Efficiently
+        if (missingTitles.length > 0) {
+            console.log(`Fetching missing explanations for: ${missingTitles}`);
+
+            const limit = pLimit(3);
+            const fetchPromises = missingTitles.map(title =>
+                limit(() => generateTopicExplanation(topic, title))
+            );
+
+            const newExplanations = await Promise.all(fetchPromises);
+
+            // 🚀 Step 4: Store New Results in Redis in One Batch (Use `mset`)
+            const redisPayload: string[] = [];
+            newExplanations.forEach((explanation, index) => {
+                const title = missingTitles[index];
+                results[title] = explanation;
+                redisPayload.push(`${topic}-${title}`, JSON.stringify(explanation));
+            });
+
+            if (redisPayload.length > 0) {
+                const redisPayloadObject = Object.fromEntries(
+                    redisPayload.reduce((acc, _, i, arr) => {
+                        if (i % 2 === 0) acc.push([arr[i], arr[i + 1]]);
+                        return acc;
+                    }, [] as [string, string][])
+                );
+                await redisClient.mSet(redisPayloadObject);
+                await Promise.all(
+                    missingTitles.map(title =>
+                        redisClient.expire(`${topic}-${title}`, 86400) // Set TTL
+                    )
+                );
+            }
+        }
+
+        return results;
+    } catch (error) {
+        console.error("Batch API Error:", error);
+        return { error: "Internal Server Error" };
+    }
+});
+
+// Clear Cache API
+app.get('/api/clear_cache', async () => {
+    try {
+        await redisClient.flushAll();
         console.log('Redis cache cleared!');
-        res.json({ message: 'Redis cache cleared successfully!' });
+        return { message: 'Redis cache cleared successfully!' };
     } catch (error) {
         console.error('Error clearing Redis cache:', error);
-        res.status(500).json({ message: 'Failed to clear cache' });
+        return { message: 'Failed to clear cache' };
     }
 });
 
-
-
-const port = process.env.PORT || 3000;
-
-app.listen(port, async () => {
-    redisClient.on("error", err => console.log(err));
-    await redisClient.connect();
-
-    console.log(`Server running at http://localhost:${port}`);
+// Start the server
+app.listen(process.env.PORT || 3000, () => {
+    console.log(`Server running at http://localhost:${process.env.PORT || 3000}`);
 });
-
-
-
-
-
-
-
-
-
-
-

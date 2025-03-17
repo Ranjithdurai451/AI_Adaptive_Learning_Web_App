@@ -1,14 +1,28 @@
 import { prerequisites } from "./lib/data";
 import {
-  fetchWithRetry,
+  filterVideos,
+  formatVideoData,
   generateQuiz,
   generateRoadmap,
+  generateSearchQuery,
   generateTopicExplanation,
+  searchYouTubeVideos,
+  selectBestVideo,
 } from "./lib/utils";
 import { createClient } from "redis";
 import { Elysia } from "elysia";
 import cors from "@elysiajs/cors";
 import pLimit from "p-limit";
+import type {
+  TopicExplanation,
+  SectionVideoMap,
+  TopicVideoMap,
+  CombinedResponse,
+} from "./lib/types";
+
+// interface CombinedResponse extends TopicExplanation {
+//   videos: SectionVideoMap;
+// }
 
 const redisClient = createClient({
   url: process.env.REDIS_URL || "",
@@ -99,7 +113,17 @@ app.get("/api/generate_topic_explanation", async ({ query }) => {
 
     // Call the retry function
     const explanation = await generateTopicExplanation(topic, stepTitle);
+    // {
+    //   eplanation:,
+    //   youtube_data:[
+    //     {
+    //       youtube_url,
 
+    //     }{
+
+    //     }
+    //   ]
+    // }
     // Store the successful response in cache
     if (explanation && !explanation.error)
       await redisClient.set(cacheKey, JSON.stringify(explanation), {
@@ -107,6 +131,92 @@ app.get("/api/generate_topic_explanation", async ({ query }) => {
       });
 
     return explanation;
+  } catch (error) {
+    console.error("API Error:", error);
+    return { error: "Internal Server Error" };
+  }
+});
+
+app.get("/api/generate_topic_explanation_with_videos", async ({ query }) => {
+  try {
+    const { topic, stepTitle, language = "English" } = query;
+
+    if (!topic || !stepTitle) {
+      return { error: "Topic and Step Title are required." };
+    }
+
+    // Generate topic explanation first
+    const cacheKey = `${topic}-${stepTitle}`;
+    let explanation: TopicExplanation | null = null;
+
+    const cacheExists = await redisClient.get(cacheKey);
+    if (cacheExists) {
+      console.log("Cache Hit!!");
+      explanation = JSON.parse(cacheExists) as TopicExplanation;
+    } else {
+      explanation = await generateTopicExplanation(topic, stepTitle);
+
+      // Store the successful response in cache
+      if (explanation && !("error" in explanation)) {
+        await redisClient.set(cacheKey, JSON.stringify(explanation), {
+          EX: Number(process.env.REDIS_CACHE_EXP_DURATION) || 2592000,
+        });
+      }
+    }
+
+    if (!explanation || "error" in explanation) {
+      return explanation || { error: "Failed to generate topic explanation" };
+    }
+
+    // Now fetch videos for each section
+    const videoResults: SectionVideoMap = {};
+
+    // Process all sections in parallel
+    await Promise.all(
+      explanation.sections.map(async (section) => {
+        // Combine the main topic and section title for better video search
+        const searchQuery = await generateSearchQuery(
+          topic,
+          section.title,
+          language
+        );
+
+        const videos = await searchYouTubeVideos(searchQuery, language);
+
+        // Try with recent videos first
+        let filteredVideos = await filterVideos(videos, true);
+
+        // If no recent videos found, try with older videos
+        if (!filteredVideos || filteredVideos.length === 0) {
+          console.log("No recent videos found, looking for older videos...");
+          filteredVideos = await filterVideos(videos, false);
+        }
+
+        if (filteredVideos && filteredVideos.length > 0) {
+          const bestVideo = selectBestVideo(filteredVideos);
+          videoResults[section.title] = {
+            video: formatVideoData(bestVideo),
+          };
+        } else {
+          videoResults[section.title] = {
+            error: "No suitable videos found",
+          };
+        }
+      })
+    );
+
+    const transformedVideos: TopicVideoMap = {};
+    for (const [sectionTitle, videoData] of Object.entries(videoResults)) {
+      transformedVideos[sectionTitle] = { default: videoData };
+    }
+
+    // Combine explanation with transformed video data
+    const result: CombinedResponse = {
+      ...explanation,
+      videos: transformedVideos,
+    };
+
+    return result;
   } catch (error) {
     console.error("API Error:", error);
     return { error: "Internal Server Error" };

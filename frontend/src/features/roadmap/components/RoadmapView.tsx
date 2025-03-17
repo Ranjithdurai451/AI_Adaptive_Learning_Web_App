@@ -1,21 +1,19 @@
-import { generateDetailedExplanation } from '@/lib/actions';
-import { Roadmap } from '@/lib/types';
-import { toSlug } from '@/lib/utils';
+import { useVideoStore } from "@/lib/store/useVideoStore";
+import { Roadmap } from "@/lib/types";
+import { toSlug } from "@/lib/utils";
 import {
   ChevronUp,
   ChevronDown,
   FileText,
   Youtube,
-  BookOpen,
-  Check,
   CheckCircle2,
   Info,
   ArrowLeft,
   ArrowRight,
   BarChart2,
-} from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router';
+} from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router";
 
 type RoadmapViewProps = {
   skill: string;
@@ -41,7 +39,9 @@ const RoadmapView = ({
     total: 0,
     percentage: 0,
   });
-  console.log('Score :', score);
+
+  const { setSelectedVideo } = useVideoStore();
+  console.log("Score :", score);
   // Calculate progress
   useEffect(() => {
     let totalTopics = 0;
@@ -120,7 +120,7 @@ const RoadmapView = ({
             <div className="flex items-center gap-2">
               <BarChart2 className="w-4 h-4 text-primary" />
               <span className="text-sm">
-                Progress:{' '}
+                Progress:{" "}
                 <span className="font-medium">
                   {progress.completed}/{progress.total}
                 </span>
@@ -192,8 +192,8 @@ const RoadmapView = ({
                         key={`topic-${index}`}
                         className={`group grid grid-cols-12 gap-1 transition-colors duration-200 ${
                           isTopicCompleted(item.skillId, index)
-                            ? 'bg-primary/5'
-                            : 'hover:bg-muted/20'
+                            ? "bg-primary/5"
+                            : "hover:bg-muted/20"
                         }`}
                         onClick={(e) =>
                           toggleTopicCompletion(item.skillId, index, e)
@@ -205,8 +205,8 @@ const RoadmapView = ({
                             className="w-5 h-5 rounded-full flex items-center justify-center transition-colors"
                             aria-label={
                               isTopicCompleted(item.skillId, index)
-                                ? 'Mark as incomplete'
-                                : 'Mark as complete'
+                                ? "Mark as incomplete"
+                                : "Mark as complete"
                             }
                             onClick={(e) =>
                               toggleTopicCompletion(item.skillId, index, e)
@@ -224,8 +224,8 @@ const RoadmapView = ({
                         <div
                           className={`col-span-10 sm:col-span-8 py-3 pr-2 pl-0 sm:px-3 font-medium text-sm ${
                             isTopicCompleted(item.skillId, index)
-                              ? 'line-through opacity-70'
-                              : ''
+                              ? "line-through opacity-70"
+                              : ""
                           }`}
                         >
                           {topic}
@@ -258,7 +258,7 @@ const RoadmapView = ({
                             <button
                               className="p-1.5 rounded-md hover:bg-muted/60 transition-colors"
                               aria-label="Watch video"
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={() => setSelectedVideo("dQw4w9WgXcQ")}
                             >
                               <Youtube className="w-4 h-4 text-red-600" />
                             </button>
@@ -287,7 +287,7 @@ const RoadmapView = ({
 
           <div className="flex gap-2">
             <Link
-              to={'/skill-selector'}
+              to={"/skill-selector"}
               className="px-3 py-1.5 border border-border rounded-md text-xs font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
             >
               <ArrowLeft className="w-3 h-3" />

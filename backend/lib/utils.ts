@@ -1,11 +1,13 @@
 import { prerequisites } from "./data";
 import { model } from "./model";
-
+import { google } from "googleapis";
+const youtube = google.youtube({
+  version: "v3",
+  auth: process.env.YOUTUBE_API_KEY,
+});
 // Function to generate quiz
 export async function generateQuiz(topic: string) {
   try {
-
-
     const total_number_of_questions = 1;
     const prompt = `
         Generate a JSON quiz for ${topic} with exactly ${total_number_of_questions} questions these structured categories:
@@ -26,7 +28,10 @@ export async function generateQuiz(topic: string) {
         }`;
 
     const result = await model.generateContent(prompt);
-    const responseText = result.response.text().replace(/```json|```/g, "").trim();
+    const responseText = result.response
+      .text()
+      .replace(/```json|```/g, "")
+      .trim();
 
     // return responseText;
     return JSON.parse(responseText);
@@ -36,12 +41,8 @@ export async function generateQuiz(topic: string) {
       error: "Failed to generate explanation. Please try again.",
       details: error,
     };
-
   }
 }
-
-
-
 
 export async function generateRoadmap(score: number, topic: string) {
   let roadmapPrompt = ``;
@@ -64,12 +65,20 @@ Format:
     "description": "Comprehensive learning path for ${topic} including prerequisites and progression from fundamentals to advanced concepts.",
     "prerequisites": ${JSON.stringify(prerequisites[topic]) || []},
     "steps": [
-      ${prerequisites[topic] ? prerequisites[topic].map((prereq) => `{
+      ${
+        prerequisites[topic]
+          ? prerequisites[topic]
+              .map(
+                (prereq) => `{
         "skillId": "${prereq}",
         "title": "Essential ${prereq} Fundamentals",
         "description": "Core ${prereq} concepts required before learning ${topic}",
         "subTopics": ["List 5-8 key subtopics for ${prereq}"]
-      }`).join(",\n") + "," : ""}
+      }`
+              )
+              .join(",\n") + ","
+          : ""
+      }
       {
         "skillId": "${topic}-basics",
         "title": "Beginner ${topic}",
@@ -165,7 +174,6 @@ Format:
   `;
   }
 
-
   try {
     const result = await model.generateContent(roadmapPrompt);
     let roadmapText = result.response
@@ -189,103 +197,13 @@ Format:
       error: "Failed to generate explanation. Please try again.",
       details: error,
     };
-
   }
 }
 
-
-
-// export async function generateTopicExplanation(topic: string, stepTitle: string) {
-//
-//
-//   // Create a prompt that requests specifically formatted content
-//   const prompt = `
-//    Generate a comprehensive educational explanation for the "${topic}" under the step "${stepTitle}". 
-//    Ensure:
-//    - The response is structured in valid JSON format.
-//    -  The data like content,example,code,resources should be ${stepTitle} basic to pro level in that language or technology or concept.This is the main thing to ensure And only do this if ${stepTitle} is langauage or framework or technology,other everything should should be content of this main topic ${topic}.
-//    - Makesure that given json data is must can be parsed and used in the frontend.
-//    - And this information and content generated should be simple and easy to understand for the user. 
-//    
-//       The response must be formatted as valid JSON with this exact structure:
-//       {
-//         "id": "${stepTitle.toLowerCase().replace(/\s+/g, "-")}",
-//         "skillId": "${stepTitle.toLowerCase().split(/\s+/)[0]}",
-//         "title": "${stepTitle}",
-//         "difficulty": "Choose an appropriate difficulty level (Beginner, Intermediate, or Advanced)",
-//         "description": "Write a concise 2-3 sentence overview of ${stepTitle}.",
-//         "estimatedReadingTime": "Estimate appropriate reading time in minutes",
-//         "lastUpdated": "Current date in Month DD, YYYY format",
-//         "author": "${stepTitle} Team",
-//         "sections": [
-//           {
-//             "id": "section-1-id",
-//             "title": "First Main Concept of ${stepTitle}",
-//             "content": "Write 3-4 detailed paragraphs explaining this concept. Include technical details, history if relevant, and explain why this concept is important.",
-//
-//               "example":{
-//               "code": "Provide a practical code example demonstrating this concept if applicable.",
-//               "language": "Choose a programming language (JavaScript, Python, etc.)",
-//               "filename": "example.js or it can be title of the code"
-//               },
-//
-//             "tips": [
-//               "Provide 3 practical tips for working with this concept",
-//               "Each tip should be specific and actionable",
-//               "Include best practices"
-//             ]
-//           },
-//           {
-//             "id": "section-2-id",
-//             "title": "Second Main Concept of ${stepTitle}",
-//             "content": "Write 3-4 detailed paragraphs explaining this concept.",
-//            "example":{
-//               "code": "Provide a practical code example demonstrating this concept if applicable.",
-//               "language": "Choose a programming language (JavaScript, Python, etc.)",
-//               "filename": "example.js or it can be title of the code"
-//               },
-//             "tips": [
-//               "Provide 3 practical tips for working with this concept",
-//               "Each tip should be specific and actionable",
-//               "Include best practices"
-//             ]
-//           },
-//           /* Include at least 5-7 sections covering the main concepts of ${stepTitle} */
-//         ],
-//         "resources": [
-//           {
-//             "title": "Official ${stepTitle} Documentation",
-//             "url": "https://example.com/${stepTitle.toLowerCase()}/docs"
-//           },
-//           {
-//             "title": "Recommended ${stepTitle} Tutorial",
-//             "url": "https://example.com/tutorials/${stepTitle.toLowerCase()}"
-//           },
-//           /* Include 3-5 relevant resources */
-//         ]
-//       }`;
-//
-//   try {
-//     // In a real implementation, this would call an AI model
-//     const result = await model.generateContent(prompt);
-//     // console.log("AI Response:", result.response.text()); // Debugging log
-//     // Clean the response text by removing any code block formatting
-//     let responseText = result.response
-//       .text()
-//       .replace(/```json|```/g, "")
-//       .trim();
-//
-//     // Parse and return the JSON
-//     return JSON.parse(responseText);
-//   } catch (error) {
-//     console.error("Error generating topic explanation:", error);
-//     return {
-//       error: "Failed to generate explanation. Please try again.",
-//       details: error,
-//     };
-//   }
-// }
-export async function generateTopicExplanation(topic: string, stepTitle: string) {
+export async function generateTopicExplanation(
+  topic: string,
+  stepTitle: string
+) {
   // Create a prompt that avoids template literal interpolation in the output
   // and replaces variables directly to prevent escape character issues
   const safeTopicId = stepTitle.toLowerCase().replace(/\s+/g, "-");
@@ -362,7 +280,10 @@ export async function generateTopicExplanation(topic: string, stepTitle: string)
     // 1. Get the raw text
     // 2. Remove any markdown code block delimiters
     // 3. Trim whitespace
-    let responseText = result.response.text().replace(/```json|```/g, "").trim();
+    let responseText = result.response
+      .text()
+      .replace(/```json|```/g, "")
+      .trim();
 
     // Extra safety: Handle potential $ characters and other problematic escape sequences
     responseText = responseText.replace(/\$(?!{)/g, "\\$"); // Escape standalone $ characters
@@ -390,6 +311,124 @@ export async function generateTopicExplanation(topic: string, stepTitle: string)
   }
 }
 
+export async function generateSearchQuery(
+  mainTopic: string,
+  subtopic: string,
+  language: string
+) {
+  // const model = model.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const prompt = `Generate a precise best single YouTube search query for videos about ${mainTopic}, specifically teaching: ${subtopic}. Language: ${language}.
+  ensure:
+    -Include only the best for the search query for selected ${language}.
+    -don't give Tamil translated query just give best query to find right video on user specified subtopic under topic in youtube.`;
+  const response = await model.generateContent(prompt);
+  console.log(response.response.text().trim().replace(/\*/g, ""));
+
+  return response.response.text().trim().replace(/\*/g, "").split("\n")[0];
+}
+export async function searchYouTubeVideos(query: string, language: string) {
+  const response = await youtube.search.list({
+    part: ["snippet"], // Ensure it's an array
+    q: query,
+    type: ["video"], // Ensure it's an array
+    maxResults: 10,
+    relevanceLanguage: language === "Tamil" ? "ta" : "en",
+    regionCode: language === "Tamil" ? "IN" : "US",
+  });
+
+  return response.data.items || [];
+}
+
+export async function filterVideos(videos: any, enforceRecentOnly = true) {
+  if (!videos.length) return [];
+
+  const videoIds = videos.map((v: any) => v.id.videoId).join(",");
+  const details = await youtube.videos.list({
+    part: ["snippet,statistics,contentDetails"],
+    id: videoIds,
+  });
+
+  return (
+    details.data.items &&
+    details.data.items.filter((video) => {
+      const duration = parseDuration(video.contentDetails?.duration || "");
+      const publishedAt = new Date(video?.snippet?.publishedAt || "");
+      const hasLikes = parseInt(video?.statistics?.likeCount || "0") > 0;
+
+      // Basic requirements: minimum duration and has likes
+      const basicRequirements = duration >= 5 && hasLikes;
+
+      if (enforceRecentOnly) {
+        // For recent videos: published within the last 2 years
+        const twoYearsAgo = new Date(
+          new Date().setFullYear(new Date().getFullYear() - 2)
+        );
+        return basicRequirements && publishedAt >= twoYearsAgo;
+      } else {
+        // For older videos: no time restriction, just sort by recency later
+        return basicRequirements;
+      }
+    })
+  );
+}
+
+export function parseDuration(duration: any) {
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  return parseInt(match[1] || 0) * 60 + parseInt(match[2] || 0);
+}
+
+export function selectBestVideo(videos: any) {
+  // Sort videos by recency if there's more than one
+  if (videos.length > 1) {
+    videos.sort((a: any, b: any) => {
+      const scoreA = calculateVideoScore(a);
+      const scoreB = calculateVideoScore(b);
+
+      // If scores are very close, prefer more recent video
+      if (Math.abs(scoreA - scoreB) < 0.1) {
+        return (
+          Number(new Date(b.snippet.publishedAt)) -
+          Number(new Date(a.snippet.publishedAt))
+        );
+      }
+
+      return scoreB - scoreA;
+    });
+
+    return videos[0];
+  }
+
+  return videos[0]; // Return the only video if there's just one
+}
+function calculateVideoScore(video: any) {
+  const likes = parseInt(video.statistics?.likeCount || 0);
+  const views = parseInt(video.statistics?.viewCount || 0);
+  const daysSinceUpload =
+    (Date.now() - Number(new Date(video.snippet.publishedAt))) / (1000 * 86400);
+
+  // Adjust weights to favor recency more when looking at all videos
+  const likeWeight = 0.35;
+  const viewWeight = 0.25;
+  const recencyWeight = 0.4; // Increased recency weight
+
+  return (
+    likes * likeWeight +
+    views * viewWeight +
+    (1 / (daysSinceUpload + 1)) * recencyWeight
+  );
+}
+
+export function formatVideoData(video: any) {
+  return {
+    title: video.snippet.title,
+    url: `https://youtu.be/${video.id}`,
+    publishedAt: video.snippet.publishedAt,
+    likes: video.statistics.likeCount,
+    views: video.statistics.viewCount,
+    duration: video.contentDetails.duration,
+  };
+}
+
 // Helper function to sanitize problematic JSON strings
 function sanitizeJsonString(jsonString: string): string {
   // Replace problematic escape sequences
@@ -410,16 +449,21 @@ function sanitizeJsonString(jsonString: string): string {
   return sanitized;
 }
 
-export const fetchWithRetry = async (topic: string, title: string, retries = 3): Promise<any> => {
+export const fetchWithRetry = async (
+  topic: string,
+  title: string,
+  retries = 3
+): Promise<any> => {
   let attempt = 0;
   while (attempt < retries) {
     const explanation = await generateTopicExplanation(topic, title);
     if (!explanation.error) return explanation;
-    console.error(`Retry ${attempt + 1} failed for: ${title}`, explanation.error);
+    console.error(
+      `Retry ${attempt + 1} failed for: ${title}`,
+      explanation.error
+    );
     attempt++;
     // await Bun.sleep(2000); // Wait 2s before retry
   }
   return { error: "Failed to fetch explanation" };
 };
-
-

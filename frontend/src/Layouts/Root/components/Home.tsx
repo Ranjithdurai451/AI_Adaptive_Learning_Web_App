@@ -1,15 +1,14 @@
-import CodeBlock from '@/components/ui/CodeBlock'
-import RightArrow from '@/components/ui/RightArrow'
-import { generateBatchExplainations } from '@/lib/actions'
-import { useEffect } from 'react'
-import { Link } from 'react-router'
+import RightArrow from "@/components/ui/RightArrow";
+
+import { useEffect } from "react";
+import { Link } from "react-router";
 
 const Home = () => {
   useEffect(() => {
     // generateBatchExplainations();
-  }, [])
+  }, []);
   return (
-    <div className=' h-full w-full flex justify-center items-center'>
+    <div className=" h-full w-full flex justify-center items-center">
       <div className="flex shadow-md flex-col items-center p-5 pb-[25px] mt-5 rounded-md  border-b dark:border-b-white/10 border-b-black/20">
         <p className="bg-primary p-[0.2rem] rounded-md text-[0.875rem] px-3 py-1 font-medium text-muted">
           AI-Powered Learning
@@ -25,16 +24,17 @@ const Home = () => {
           path with hand-picked resources tailored to your skill level and
           preferences.
         </p>
-        <Link to={'skill-selector'} className=" cursor-pointer shadow-lg hover:scale-[1.1] transition-all flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground">
+        <Link
+          to={"skill-selector"}
+          className=" cursor-pointer shadow-lg hover:scale-[1.1] transition-all flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground"
+        >
           {" "}
           Get Started
           <RightArrow />
         </Link>
       </div>
-
     </div>
+  );
+};
 
-  )
-}
-
-export default Home
+export default Home;

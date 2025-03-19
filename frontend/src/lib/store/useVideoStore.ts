@@ -1,11 +1,12 @@
 import { create } from "zustand";
+import { VideoData } from "../types";
 
 interface VideoStore {
-  selectedVideo: string | null;
-  setSelectedVideo: (videoId: string | null) => void;
+  selectedVideo: VideoData | null;
+  setSelectedVideo: (url: VideoData | null) => void;
 }
 
 export const useVideoStore = create<VideoStore>((set) => ({
   selectedVideo: null,
-  setSelectedVideo: (videoId) => set({ selectedVideo: videoId }),
+  setSelectedVideo: (video) => set({ selectedVideo: video }),
 }));

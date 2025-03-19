@@ -1,23 +1,36 @@
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
+import { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
 
-import { ArrowLeft, Type, Menu, ChevronRight, ArrowUp } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
-import { Link, useParams, useSearchParams } from "react-router";
-import Loader from "@/Layouts/Root/components/Loader";
-import { generateDetailedExplanation } from "@/lib/actions";
-import CodeBlock from "@/components/ui/CodeBlock";
-import { LearningResource } from "@/lib/types";
+import {
+  ArrowLeft,
+  Type,
+  Menu,
+  ChevronRight,
+  ArrowUp,
+  Youtube,
+  Info,
+  ExternalLink,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import Loader from '@/Layouts/Root/components/Loader';
+import {
+  generateDetailedExplanation,
+  generateDetailedExplanationWithVideos,
+} from '@/lib/actions';
+import CodeBlock from '@/components/ui/CodeBlock';
+import { CombinedResponse, LearningResource } from '@/lib/types';
+import { useVideoStore } from '@/lib/store/useVideoStore';
 export const renderTextWithCodeHighlights = (text: string) => {
   return text
     .split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*[^*\s]\*|`[^`]+`|\*)/g) // Ensure correct splitting
     .map((part, index) => {
-      if (part === "*") {
+      if (part === '*') {
         return <br key={index} />; // Insert a new line
       }
       if (/^\*\*(.+)\*\*$/.test(part)) {
@@ -44,35 +57,52 @@ export const renderTextWithCodeHighlights = (text: string) => {
     });
 };
 export default function TopicExplanation() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const topic = searchParams.get("topic") || "";
+  const topic = searchParams.get('topic') || '';
   const title = useParams().title as string;
-  // const preferredLanguage = searchParams.get("preferredLanguage") as string;
-  const score = Number(searchParams.get("score"));
-  const [topicData, setTopicData] = useState<LearningResource | null>();
+  const preferredLanguage =
+    (searchParams.get('preferredLanguage') as string) || 'english';
+  const score = Number(searchParams.get('score'));
+  const [topicData, setTopicData] = useState<CombinedResponse | null>();
   // console.log(topicData);
 
   useEffect(() => {
     // Fetch topic data based on the topic ID
     // console.log('Fetching topic explanation for:', topic, title);
-
-    generateDetailedExplanation(topic, title).then((response) => {
-      // console.log(response);
-      setTopicData(response);
-    });
+    if (!localStorage.getItem(`${topic}-${title}-${preferredLanguage}`)) {
+      generateDetailedExplanationWithVideos(
+        topic,
+        title,
+        preferredLanguage
+      ).then((response) => {
+        console.log(response);
+        if (!response.error)
+          localStorage.setItem(
+            `${topic}-${title}-${preferredLanguage}`,
+            JSON.stringify(response)
+          );
+        setTopicData(response);
+      });
+    } else {
+      setTopicData(
+        JSON.parse(
+          localStorage.getItem(`${topic}-${title}-${preferredLanguage}`) || ''
+        )
+      );
+    }
   }, []);
 
   useEffect(() => {
-    console.log(topicData);
+    // console.log(topicData);
     if (topicData) {
       setActiveSection(topicData?.sections[0]?.id);
-      console.log("Triggered");
       setIsLoading(false);
     }
   }, [topicData]);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [fontSize, setFontSize] = useState("medium");
+  const [fontSize, setFontSize] = useState('medium');
   const [activeSection, setActiveSection] = useState<string | null>();
   const [readingProgress, setReadingProgress] = useState(0);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
@@ -122,9 +152,9 @@ export default function TopicExplanation() {
 
     const contentElement = contentRef.current;
     if (contentElement) {
-      contentElement.addEventListener("scroll", handleScroll);
+      contentElement.addEventListener('scroll', handleScroll);
       return () => {
-        contentElement.removeEventListener("scroll", handleScroll);
+        contentElement.removeEventListener('scroll', handleScroll);
       };
     }
   }, [isLoading, topicData]);
@@ -132,16 +162,16 @@ export default function TopicExplanation() {
   // Handle font size
   const getFontSizeClass = () => {
     switch (fontSize) {
-      case "small":
-        return "text-sm";
-      case "medium":
-        return "text-base";
-      case "large":
-        return "text-lg";
-      case "x-large":
-        return "text-xl";
+      case 'small':
+        return 'text-sm';
+      case 'medium':
+        return 'text-base';
+      case 'large':
+        return 'text-lg';
+      case 'x-large':
+        return 'text-xl';
       default:
-        return "text-base";
+        return 'text-base';
     }
   };
 
@@ -149,15 +179,24 @@ export default function TopicExplanation() {
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
     if (sectionRefs.current[sectionId]) {
-      sectionRefs.current[sectionId]?.scrollIntoView({ behavior: "smooth" });
+      sectionRefs.current[sectionId]?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   // Scroll to top
   const scrollToTop = () => {
     if (contentRef.current) {
-      contentRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const setVideo = useVideoStore((state) => state.setSelectedVideo);
+
+  const onBack = () => {
+    localStorage.removeItem(`${topic}-${title}-${preferredLanguage}`);
+    navigate(
+      `/roadmap?selectedSkill=${topic}&score=${score}&preferredLanguage=${preferredLanguage}`
+    );
   };
 
   return (
@@ -171,13 +210,13 @@ export default function TopicExplanation() {
           {/* Simple header with minimal controls */}
           <header className="sticky top-0 z-30 px-4 py-3 border-b bg-background/95 backdrop-blur-sm border-border">
             <div className="container flex items-center justify-between mx-auto">
-              <Link
-                to={`/roadmap?selectedSkill=${topic}&score=${score}`}
+              <button
+                onClick={onBack}
                 className="gap-2 flex justify-center items-center"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span className="hidden sm:inline">Back</span>
-              </Link>
+              </button>
 
               <div className="flex items-center gap-3">
                 {/* Table of contents for mobile */}
@@ -204,17 +243,17 @@ export default function TopicExplanation() {
                               variant="ghost"
                               size="sm"
                               className={cn(
-                                "w-full justify-start text-left pl-8 relative",
+                                'w-full justify-start text-left pl-8 relative',
                                 activeSection === section.id &&
-                                  "text-primary font-medium"
+                                  'text-primary font-medium'
                               )}
                               onClick={() => {
                                 scrollToSection(section.id);
                                 // Close the sheet
                                 document
-                                  .querySelector("[data-radix-collection-item]")
+                                  .querySelector('[data-radix-collection-item]')
                                   ?.dispatchEvent(
-                                    new MouseEvent("click", { bubbles: true })
+                                    new MouseEvent('click', { bubbles: true })
                                   );
                               }}
                             >
@@ -241,25 +280,25 @@ export default function TopicExplanation() {
                   className="flex items-center gap-1 text-xs"
                   onClick={() =>
                     setFontSize(
-                      fontSize === "small"
-                        ? "medium"
-                        : fontSize === "medium"
-                        ? "large"
-                        : fontSize === "large"
-                        ? "x-large"
-                        : "small"
+                      fontSize === 'small'
+                        ? 'medium'
+                        : fontSize === 'medium'
+                        ? 'large'
+                        : fontSize === 'large'
+                        ? 'x-large'
+                        : 'small'
                     )
                   }
                 >
                   <Type className="w-4 h-4" />
                   <span className="hidden sm:inline">
-                    {fontSize === "small"
-                      ? "Small"
-                      : fontSize === "medium"
-                      ? "Medium"
-                      : fontSize === "large"
-                      ? "Large"
-                      : "X-Large"}
+                    {fontSize === 'small'
+                      ? 'Small'
+                      : fontSize === 'medium'
+                      ? 'Medium'
+                      : fontSize === 'large'
+                      ? 'Large'
+                      : 'X-Large'}
                   </span>
                 </Button>
               </div>
@@ -285,10 +324,10 @@ export default function TopicExplanation() {
                         variant="ghost"
                         size="sm"
                         className={cn(
-                          "w-full justify-start text-left  relative hover:bg-muted/50",
+                          'w-full justify-start text-left  relative hover:bg-muted/50',
                           activeSection === section.id
-                            ? "text-primary font-medium"
-                            : "text-foreground/80"
+                            ? 'text-primary font-medium'
+                            : 'text-foreground/80'
                         )}
                         onClick={() => scrollToSection(section.id)}
                       >
@@ -301,9 +340,9 @@ export default function TopicExplanation() {
 
                         <ChevronRight
                           className={cn(
-                            "h-4 w-4 absolute right-2 top-1/2 -translate-y-1/2 opacity-0 transition-opacity",
+                            'h-4 w-4 absolute right-2 top-1/2 -translate-y-1/2 opacity-0 transition-opacity',
                             activeSection === section.id ||
-                              "group-hover:opacity-100"
+                              'group-hover:opacity-100'
                           )}
                         />
                       </Button>
@@ -339,18 +378,18 @@ export default function TopicExplanation() {
                 className="h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar p-4"
                 ref={contentRef}
               >
-                <div className={cn("pr-4 space-y-10", getFontSizeClass())}>
+                <div className={cn('pr-4 space-y-10', getFontSizeClass())}>
                   <div className="">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <Badge>
                         {renderTextWithCodeHighlights(
-                          topicData?.difficulty || ""
+                          topicData?.difficulty || ''
                         )}
                       </Badge>
                     </div>
 
                     <h1 className="mb-3 text-2xl font-bold tracking-tight sm:text-3xl">
-                      {renderTextWithCodeHighlights(topicData?.title || "")}
+                      {renderTextWithCodeHighlights(topicData?.title || '')}{' '}
                     </h1>
                     <p className="text-muted-foreground">
                       {topicData?.description}
@@ -365,12 +404,38 @@ export default function TopicExplanation() {
                       }}
                       className=""
                     >
-                      <h2 className="flex items-center mb-4 text-xl font-semibold sm:text-2xl">
-                        <span className="mr-2 text-primary">{index + 1}.</span>
-                        {renderTextWithCodeHighlights(section.title)}
-                      </h2>
+                      <div className="flex gap-2">
+                        <h2 className="flex items-center mb-4 text-xl font-semibold sm:text-2xl">
+                          <span className="mr-2 text-primary">
+                            {index + 1}.
+                          </span>
+                          {renderTextWithCodeHighlights(section.title)}{' '}
+                        </h2>
+                        {/* {(topicData?.videos[section?.title].default?.video) ? (
+                          <button
+                            className="flex items-center justify-center w-8 h-8  rounded-md hover:bg-muted/60 transition-colors"
+                            aria-label="Watch video"
+                            onClick={() =>
+                              // console.log(
+                              //   topicData.videos[section.title]?.default?.video
+                              //     .url
+                              // )
+                              setVideo(
+                                topicData.videos[section.title].default?.video
+                              )
+                            }
+                          >
+                            <ExternalLink className="w-5 h-5 text-red-600" />
+                          </button>
+
+                        ) : (<div className="flex  h-9 items-center justify-center gap-1 text-xs text-muted-foreground">
+                          <Info className="w-5 h-5" />
+                          <span>Soon</span>
+                        </div>)} */}
+                      </div>
+
                       <div className="prose dark:prose-invert max-w-none">
-                        {section.content.split("\n\n").map((paragraph, idx) => (
+                        {section.content.split('\n\n').map((paragraph, idx) => (
                           <p key={idx} className="mb-4 leading-relaxed">
                             {renderTextWithCodeHighlights(paragraph)}
                           </p>
@@ -423,6 +488,26 @@ export default function TopicExplanation() {
                           >
                             {resource.title}
                           </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                  <section className="pt-4">
+                    <h2 className="flex items-center mb-4 text-xl font-semibold sm:text-2xl underline underline-offset-2">
+                      {/* <span className="mr-2 text-primary">#</span> */}
+                      Youtube Videos
+                    </h2>
+                    <ul className="pl-5 space-y-3 list-disc">
+                      {topicData?.videos.map((video, index) => (
+                        <li key={index}>
+                          <button
+                            onClick={() => setVideo(video)}
+                            className="hover:underline"
+                          >
+                            {video.title.length > 50
+                              ? `${video.title.substring(0, 50)}...`
+                              : video.title}
+                          </button>
                         </li>
                       ))}
                     </ul>

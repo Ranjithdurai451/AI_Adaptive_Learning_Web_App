@@ -23,12 +23,14 @@ interface QuizViewProps {
   skillName: string;
   Questions: Questions;
   onBack: () => void;
+  preferredLanguage: string;
 }
 
 export default function QuizView({
   Questions,
   onBack,
   skillName,
+  preferredLanguage
 }: QuizViewProps) {
   const navigate = useNavigate();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -78,7 +80,7 @@ export default function QuizView({
   };
 
   const onComplete = (passed: boolean) => {
-    navigate(`/roadmap?selectedSkill=${skillName}&score=${calculateScore()}`);
+    navigate(`/roadmap?selectedSkill=${skillName}&score=${calculateScore()}&preferredLanguage=${preferredLanguage}`);
   };
 
   if (showResults) {
@@ -208,8 +210,8 @@ export default function QuizView({
                 {isAnswerCorrect
                   ? 'Great job! Moving to the next question...'
                   : `The correct answer is: ${renderTextWithCodeHighlights(
-                      currentQuestion.answer
-                    )}`}
+                    currentQuestion.answer
+                  )}`}
               </AlertDescription>
             </Alert>
           )}

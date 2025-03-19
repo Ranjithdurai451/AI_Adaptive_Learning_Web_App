@@ -39,6 +39,17 @@ export async function generateDetailedExplanation(topic: string, stepTitle: stri
 
     }
 }
+export async function generateDetailedExplanationWithVideos(topic: string, stepTitle: string, language: string) {
+    try {
+
+        const response = await axiosObj.get(`/generate_topic_explanation_with_videos?topic=${topic}&stepTitle=${stepTitle}&language=${language}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error generating quiz:", error);
+
+    }
+}
+
 
 export async function clearCache() {
     try {

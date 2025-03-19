@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @plugin 'tailwindcss-animate';
 
@@ -128,9 +128,6 @@
   padding: 0; */
   box-sizing: border-box;
   /* overflow-x: hidden; */
-  /* scroll-behavior: smooth; */
-}
-html {
   scroll-behavior: smooth !important;
 }
 
@@ -169,7 +166,7 @@ html {
 }
 
 .loader:before {
-  content: "";
+  content: '';
   width: 48px;
   height: 5px;
   background: #f0808050;
@@ -181,7 +178,7 @@ html {
 }
 
 .loader:after {
-  content: "";
+  content: '';
   width: 100%;
   height: 100%;
   background: #f08080;

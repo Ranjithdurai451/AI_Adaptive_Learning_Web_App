@@ -10,8 +10,9 @@ const MainRoadMap = () => {
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
 
-  const [roadmapData, setroadmapData] = useState<Roadmap>();
+  const [roadmapData, setroadmapData] = useState<Roadmap | null>();
   const selectedSkill = searchParams.get('selectedSkill');
+  const preferredLanguage = searchParams.get('preferredLanguage')
   console.log(selectedSkill);
   if (!selectedSkill) {
     return <Navigate to="/" />;
@@ -19,14 +20,28 @@ const MainRoadMap = () => {
 
   const score = Number(searchParams.get('score') || '0');
   useEffect(() => {
-    const data = generateRoadmap(selectedSkill || '', score || 0);
-    data.then((response) => {
-      setroadmapData(response.roadmap);
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
-    });
+    if (!localStorage.getItem(`${selectedSkill}-${score}`)) {
+      const data = generateRoadmap(selectedSkill || '', score || 0);
+      data.then((response) => {
+        if (response.roadmap) {
+          localStorage.setItem(
+            `${selectedSkill}-${score}`,
+            JSON.stringify(response.roadmap)
+          );
+        }
+        setroadmapData(response.roadmap);
+      });
+    } else {
+      setroadmapData(
+        JSON.parse(localStorage.getItem(`${selectedSkill}-${score}`) || '')
+      );
+    }
   }, []);
+  useEffect(() => {
+    if (roadmapData) {
+      setIsLoading(false);
+    }
+  }, [roadmapData]);
 
   return (
     <>
@@ -49,7 +64,7 @@ const MainRoadMap = () => {
                 projects: [],
               }
             }
-            preferredLanguage="English"
+            preferredLanguage={preferredLanguage || "English"}
           />
         </div>
       )}

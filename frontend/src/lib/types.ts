@@ -90,3 +90,39 @@ export type LearningResource = {
   resources: Resource[];
 };
 
+export interface VideoData {
+  videoId: string;
+  title: string;
+  url: string;
+  publishedAt: string;
+  likes: string;
+  views: string;
+  duration: string;
+}
+
+export interface VideoData {
+  title: string;
+  url: string;
+  publishedAt: string;
+  likes: string;
+  views: string;
+  duration: string;
+}
+
+export interface VideoResult {
+  video: VideoData;
+}
+
+export interface VideoError {
+  error: string;
+}
+
+export interface TopicVideoMap {
+  [topic: string]: {
+    [subtopic: string]: VideoResult;
+  };
+}
+
+export interface CombinedResponse extends LearningResource {
+  videos: VideoData[]
+}

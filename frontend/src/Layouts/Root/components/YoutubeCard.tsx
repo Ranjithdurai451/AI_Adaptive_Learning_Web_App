@@ -1,50 +1,33 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useVideoStore } from "@/lib/store/useVideoStore";
 import { X, ExternalLink } from "lucide-react";
 
-interface YouTubeCardProps {
-  videoId: string;
-}
 
-interface VideoDetails {
-  title: string;
-  channelName: string;
-  views: string;
-  publishedAt: string;
-  description: string;
-}
-
-const YouTubeCard: React.FC<YouTubeCardProps> = ({ videoId }) => {
+const YouTubeCard = () => {
   const { selectedVideo, setSelectedVideo } = useVideoStore();
 
-  const [videoDetails, setVideoDetails] = useState<VideoDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Simulate fetching video details
     setIsLoading(true);
     setTimeout(() => {
-      setVideoDetails({
-        title: "How to Build Amazing React Components",
-        channelName: "CodeMaster",
-        views: "1.2M",
-        publishedAt: "2 weeks ago",
-        description:
-          "Learn how to create reusable, performant and beautiful React components with advanced techniques. In this tutorial, we'll cover component architecture, state management, styling strategies, and optimization techniques.",
-      });
-      setIsLoading(false);
+      console.log("working", selectedVideo);
+      if (selectedVideo) setIsLoading(false);
     }, 1000);
-  }, [videoId]);
+  }, [selectedVideo]);
 
   if (!selectedVideo) return null;
 
   const handleOpenInNewTab = () => {
-    window.open(`https://www.youtube.com/watch?v=${videoId}`, "_blank");
+    window.open(
+      ` https://www.youtube.com/watch?v=${selectedVideo?.videoId}`,
+      "_blank"
+    );
   };
 
   return (
     <div
-      onClick={(e) => e.stopPropagation()}
       className={
         "fixed inset-0 z-50 flex items-center justify-center bg-white/25 dark:bg-black/50 bg-opacity-75 transition-all duration-300  p-4"
       }
@@ -60,7 +43,7 @@ const YouTubeCard: React.FC<YouTubeCardProps> = ({ videoId }) => {
             <div className="h-8 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
           ) : (
             <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">
-              {videoDetails?.title}
+              {selectedVideo?.title}
             </h2>
           )}
           <div className="flex space-x-2">
@@ -90,7 +73,7 @@ const YouTubeCard: React.FC<YouTubeCardProps> = ({ videoId }) => {
           )}
           <iframe
             className="w-full h-full  aspect-video"
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+            src={`https://www.youtube.com/embed/${selectedVideo.videoId}?autoplay=1&rel=0`}
             title="YouTube video"
             frameBorder="0"
             allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -114,7 +97,7 @@ const YouTubeCard: React.FC<YouTubeCardProps> = ({ videoId }) => {
           </button>
         </div> */}
       </div>
-    </div>
+    </div >
   );
 };
 

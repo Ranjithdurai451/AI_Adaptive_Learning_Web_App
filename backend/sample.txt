@@ -1,0 +1,375 @@
+export async function generateSearchQuery(
+  topic: string,
+  resourcesTitles: string,
+  language: string
+) {
+  const prompt = `I have these resource titles related to a programming concept:
+"${resourcesTitles}"
+
+Based on these titles, identify the core concept they cover and create an effective YouTube search query.
+
+Your task:
+1. Identify the main programming concept these resources are about
+2. Create a clear, concise search query using this concept + "tutorial"
+3. ALWAYS append "in ${language}" at the end .
+4. If ${language} is English, do not append anything about language
+5. Return ONLY the final search query, nothing else
+
+Example input: "Oracle's Java Reflection Tutorial, Baeldung - Introduction to Java Reflection"
+Example output for Tamil: "Java Reflection tutorial in Tamil"
+Example output for English: "Java Reflection tutorial"`;
+
+  const response = await model.generateContent(prompt);
+  const searchQuery = response.response
+    .text()
+    .trim()
+    .replace(/["\*]/g, "")
+    .split("\n")[0];
+
+  console.log("Generated search query:", searchQuery);
+  return searchQuery;
+}
+export async function searchYouTubeVideos(query: string, language: string) {
+  // Map common languages to their codes
+  const languageMap: Record<string, { langCode: string; regionCode: string }> =
+  {
+    Tamil: { langCode: "ta", regionCode: "IN" },
+    Hindi: { langCode: "hi", regionCode: "IN" },
+    English: { langCode: "en", regionCode: "US" },
+    // Add more languages as needed
+  };
+
+  const langSettings = languageMap[language] || {
+    langCode: "en",
+    regionCode: "US",
+  };
+
+  const response = await youtube.search.list({
+    part: ["snippet"],
+    q: query,
+    type: ["video"],
+    maxResults: 20, // Increased to get more candidates
+    relevanceLanguage: langSettings.langCode,
+    regionCode: langSettings.regionCode,
+  });
+
+  console.log(
+    `Found ${response.data.items?.length || 0
+    } initial videos for query: "${query}"`
+  );
+  return response.data.items || [];
+}
+
+export async function filterVideos(videos: any, enforceRecentOnly = true) {
+  if (!videos.length) return [];
+
+  const videoIds = videos.map((v: any) => v.id.videoId).join(",");
+  const details = await youtube.videos.list({
+    part: ["snippet,statistics,contentDetails"],
+    id: videoIds,
+  });
+
+  console.log(
+    `Retrieved detailed information for ${details.data.items?.length || 0
+    } videos`
+  );
+
+  // First filter step: apply basic quality criteria
+  const filtered = details.data.items?.filter((video) => {
+    // Parse duration properly - fix the bug in original parseDuration
+    const duration = parseDuration(video.contentDetails?.duration || "PT0S");
+    const publishedAt = new Date(video?.snippet?.publishedAt || new Date());
+    const likeCount = parseInt(video?.statistics?.likeCount || "0");
+    const viewCount = parseInt(video?.statistics?.viewCount || "0");
+
+    // Check if the video title contains keywords that suggest it's a tutorial
+    const titleLower = video.snippet?.title?.toLowerCase() || "";
+    const isTutorial =
+      titleLower.includes("tutorial") ||
+      titleLower.includes("guide") ||
+      titleLower.includes("learn") ||
+      titleLower.includes("how to");
+
+    // Basic quality checks
+    const hasMinimumEngagement = likeCount >= 5 || viewCount >= 1000;
+    const hasReasonableDuration = duration >= 3 && duration <= 60; // Between 3 and 60 minutes
+
+    // Log filtering decisions for debugging
+    console.log(
+      `Video "${video.snippet?.title}" - Duration: ${duration}min, Likes: ${likeCount}, Views: ${viewCount}, Tutorial: ${isTutorial}`
+    );
+
+    if (enforceRecentOnly) {
+      // For recent videos: published within the last 3 years (increased from 2)
+      const threeYearsAgo = new Date();
+      threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
+      return (
+        hasMinimumEngagement &&
+        hasReasonableDuration &&
+        publishedAt >= threeYearsAgo
+      );
+    } else {
+      // For older videos: looser criteria but still ensure basic quality
+      return hasMinimumEngagement && hasReasonableDuration;
+    }
+  });
+
+  console.log(`After filtering, ${filtered?.length || 0} videos remain`);
+  return filtered || [];
+}
+
+export function parseDuration(duration: string): number {
+  // Fix the duration parsing - the original had bugs
+  try {
+    // Handle PT1H30M15S format properly
+    const hours = duration.match(/(\d+)H/)
+      ? parseInt(duration.match(/(\d+)H/)![1])
+      : 0;
+    const minutes = duration.match(/(\d+)M/)
+      ? parseInt(duration.match(/(\d+)M/)![1])
+      : 0;
+    const seconds = duration.match(/(\d+)S/)
+      ? parseInt(duration.match(/(\d+)S/)![1])
+      : 0;
+
+    // Convert everything to minutes (including partial minutes from seconds)
+    return hours * 60 + minutes + seconds / 60;
+  } catch (e) {
+    console.error("Error parsing duration:", duration, e);
+    return 0;
+  }
+}
+
+export function selectBestVideo(videos: any, preferredLanguage: string = "en") {
+  if (!videos.length) return [];
+  if (videos.length === 1) return [videos[0]];
+
+  // Score and rank the videos
+  const scoredVideos = videos.map((video: any) => {
+    // Calculate base score
+    const score = calculateVideoScore(video);
+    // Check if the video matches the preferred language
+    const isPreferredLanguageVideo = checkIfLanguageVideo(
+      video,
+      preferredLanguage
+    );
+    // Apply language bonus if the video is in the preferred language
+    const languageBonus = isPreferredLanguageVideo ? 50 : 0;
+
+    return {
+      video,
+      score: score + languageBonus,
+      isPreferredLanguageVideo,
+    };
+  });
+
+  // Sort by score (highest first)
+  scoredVideos.sort((a: any, b: any) => b.score - a.score);
+
+  // Log the top 3 videos for debugging
+  console.log(
+    `Top 3 videos by score(with ${preferredLanguage} language priority):`
+  );
+  scoredVideos.slice(0, 3).forEach((item: any, index: number) => {
+    console.log(
+      `${index + 1}. Score: ${item.score.toFixed(2)}, ${preferredLanguage}: ${item.isPreferredLanguageVideo
+      }, Title: "${item.video.snippet.title}", Views: ${item.video.statistics.viewCount
+      }`
+    );
+  });
+
+  // Return the top 3 videos
+  return scoredVideos.slice(0, 3).map((item: any) => item.video);
+}
+
+// Helper function to detect if a video matches a specific language
+function checkIfLanguageVideo(video: any, language: string): boolean {
+  if (!video) return false;
+
+  // Map of language to their language codes and keywords
+  const languageMap: Record<string, { code: string; keywords: string[] }> = {
+    english: { code: "en", keywords: ["english", "eng"] },
+    tamil: { code: "ta", keywords: ["tamil", "தமிழ்", "தமிழில்", "தமிழ"] },
+    hindi: { code: "hi", keywords: ["hindi", "हिंदी", "हिन्दी"] },
+    spanish: { code: "es", keywords: ["spanish", "español", "espanol"] },
+    french: { code: "fr", keywords: ["french", "français", "francais"] },
+    german: { code: "de", keywords: ["german", "deutsch"] },
+    japanese: { code: "ja", keywords: ["japanese", "日本語", "japan"] },
+    korean: { code: "ko", keywords: ["korean", "한국어", "korea"] },
+    chinese: {
+      code: "zh",
+      keywords: ["chinese", "中文", "mandarin", "cantonese"],
+    },
+    arabic: { code: "ar", keywords: ["arabic", "العربية", "عربى"] },
+    russian: { code: "ru", keywords: ["russian", "русский", "россия"] },
+    // Add more languages as needed
+  };
+
+  // Normalize language input to lowercase for case-insensitive matching
+  const normalizedLanguage = language.toLowerCase();
+
+  // If the language isn't in our map, we'll do a simple match on the language name
+  const languageData = languageMap[normalizedLanguage] || {
+    code: normalizedLanguage,
+    keywords: [normalizedLanguage],
+  };
+
+  // Check title and description for language indicators
+  const title = video.snippet?.title?.toLowerCase() || "";
+  const description = video.snippet?.description?.toLowerCase() || "";
+  const channelTitle = video.snippet?.channelTitle?.toLowerCase() || "";
+
+  // Check if any language keywords are present in title, description, or channel name
+  const hasLanguageKeyword = languageData.keywords.some(
+    (keyword) =>
+      title.includes(keyword) ||
+      description.includes(keyword) ||
+      channelTitle.includes(keyword)
+  );
+
+  // Check if the video has the preferred language in its default language setting
+  const defaultLanguage = video.snippet?.defaultLanguage || "";
+  const defaultAudioLanguage = video.snippet?.defaultAudioLanguage || "";
+
+  return (
+    hasLanguageKeyword ||
+    defaultLanguage === languageData.code ||
+    defaultAudioLanguage === languageData.code
+  );
+}
+function calculateVideoScore(video: any) {
+  try {
+    // Parse video metrics
+    const likes = parseInt(video.statistics?.likeCount || "0");
+    const views = parseInt(video.statistics?.viewCount || "0");
+    const comments = parseInt(video.statistics?.commentCount || "0");
+    const daysSinceUpload = Math.max(
+      1,
+      (Date.now() - new Date(video.snippet.publishedAt).getTime()) /
+      (1000 * 86400)
+    );
+    const duration = parseDuration(video.contentDetails?.duration || "PT0S");
+
+    // Score title relevance
+    const title = video.snippet?.title?.toLowerCase() || "";
+    const titleScore =
+      (title.includes("tutorial") ? 5 : 0) +
+      (title.includes("explain") ? 3 : 0) +
+      (title.includes("guide") ? 3 : 0) +
+      (title.includes("learn") ? 2 : 0) +
+      (title.includes("how to") ? 2 : 0);
+
+    // Dynamic weight adjustments
+    const viewsNormalized = Math.min(1, Math.log10(views + 1) / 6); // Normalize to 0-1 scale
+    const likesNormalized = Math.min(1, Math.log10(likes + 1) / 4);
+    const commentsNormalized = Math.min(1, Math.log10(comments + 1) / 3);
+    const recencyFactor = 1 / Math.sqrt(daysSinceUpload);
+
+    // Prefer videos between 10-30 minutes (ideal tutorial length)
+    const durationFactor =
+      duration > 5 && duration < 45 ? 1 - Math.abs(duration - 20) / 30 : 0.1;
+
+    // Calculate final score with balanced weights
+    const score =
+      viewsNormalized * 20 +
+      likesNormalized * 25 +
+      commentsNormalized * 15 +
+      recencyFactor * 15 +
+      durationFactor * 15 +
+      titleScore * 2;
+
+    return score;
+  } catch (e) {
+    console.error("Error calculating score:", e);
+    return 0;
+  }
+}
+
+export function formatVideoData(video: any) {
+  if (!video) return null;
+
+  try {
+    const durationText = formatDuration(
+      video.contentDetails?.duration || "PT0S"
+    );
+
+    return {
+      title: video.snippet.title,
+      url: ` https://youtu.be/${video.id}`,
+      publishedAt: video.snippet.publishedAt,
+      likes: video.statistics?.likeCount || "0",
+      views: video.statistics?.viewCount || "0",
+      duration: durationText,
+      videoid: video.id,
+      thumbnails: video.snippet.thumbnails,
+      channelTitle: video.snippet.channelTitle,
+    };
+  } catch (e) {
+    console.error("Error formatting video data:", e);
+    return null;
+  }
+}
+
+// Helper to format duration in human-readable format
+function formatDuration(isoDuration: string): string {
+  try {
+    const hours = isoDuration.match(/(\d+)H/)
+      ? parseInt(isoDuration.match(/(\d+)H/)![1])
+      : 0;
+    const minutes = isoDuration.match(/(\d+)M/)
+      ? parseInt(isoDuration.match(/(\d+)M/)![1])
+      : 0;
+    const seconds = isoDuration.match(/(\d+)S/)
+      ? parseInt(isoDuration.match(/(\d+)S/)![1])
+      : 0;
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds
+        .toString()
+        .padStart(2, "0")}`;
+    } else {
+      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    }
+  } catch (e) {
+    return "0:00";
+  }
+}
+
+// Helper function to sanitize problematic JSON strings
+function sanitizeJsonString(jsonString: string): string {
+  // Replace problematic escape sequences
+  let sanitized = jsonString
+    // Fix common escape sequence issues
+    .replace(/\\/g, "\\\\") // Double all backslashes first
+    .replace(/\\\\"/g, '\\"') // Fix any double-escaped quotes
+    .replace(/\\\\n/g, "\\n") // Fix any double-escaped newlines
+    .replace(/\\\\t/g, "\\t") // Fix any double-escaped tabs
+    .replace(/\\\\\//g, "\\/") // Fix any double-escaped forward slashes
+
+    // Handle unicode escape sequences
+    .replace(/\\\\u([0-9a-fA-F]{4})/g, "\\u$1");
+
+  // Last resort: strip out any characters that might still cause issues
+  sanitized = sanitized.replace(/[^\x20-\x7E]/g, "");
+
+  return sanitized;
+}
+
+export const fetchWithRetry = async (
+  topic: string,
+  title: string,
+  retries = 3
+): Promise<any> => {
+  let attempt = 0;
+  while (attempt < retries) {
+    const explanation = await generateTopicExplanation(topic, title);
+    if (!explanation.error) return explanation;
+    console.error(
+      `Retry ${attempt + 1} failed for: ${title},
+  explanation.error`
+    );
+    attempt++;
+    // await Bun.sleep(2000); // Wait 2s before retry
+  }
+  return { error: "Failed to fetch explanation" };
+};

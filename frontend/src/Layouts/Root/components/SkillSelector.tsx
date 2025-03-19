@@ -76,9 +76,9 @@ export default function SkillSelector() {
       : [];
 
     if (prerequisiteTopics.length > 0) {
-      navigate(`/quiz?selectedSkill=${selectedSkill?.id}`);
+      navigate(`/quiz?selectedSkill=${selectedSkill?.id}&preferredLanguage=${preferredLanguage}`);
     } else {
-      navigate(`/roadmap?selectedSkill=${selectedSkill?.id}&score=100`);
+      navigate(`/roadmap?selectedSkill=${selectedSkill?.id}&score=100&preferredLanguage=${preferredLanguage}`);
     }
   };
 
@@ -125,11 +125,8 @@ export default function SkillSelector() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="English">English</SelectItem>
-                <SelectItem value="Spanish">Spanish</SelectItem>
-                <SelectItem value="French">French</SelectItem>
-                <SelectItem value="German">German</SelectItem>
+                <SelectItem value="Tamil">Tamil</SelectItem>
                 <SelectItem value="Hindi">Hindi</SelectItem>
-                <SelectItem value="Chinese">Chinese</SelectItem>
               </SelectContent>
             </Select>
           </div>

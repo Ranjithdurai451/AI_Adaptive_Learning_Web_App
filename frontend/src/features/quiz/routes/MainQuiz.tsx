@@ -4,7 +4,6 @@ import { generateQuiz } from '@/lib/actions';
 import QuizView from '../components/QuizView';
 import { Questions } from '@/lib/types';
 import Loader from '../../../Layouts/Root/components/Loader';
-import { skills } from '@/lib/data';
 
 const MainQuiz = () => {
   const navigate = useNavigate();
@@ -13,7 +12,7 @@ const MainQuiz = () => {
 
   const [quizData, setQuizData] = useState<Questions>([]);
   const selectedSkill = searchParams.get('selectedSkill');
-
+  const preferredLanguage = searchParams.get('preferredLanguage')
   useEffect(() => {
     const data = generateQuiz(selectedSkill || '');
     console.log(selectedSkill);
@@ -39,6 +38,7 @@ const MainQuiz = () => {
           onBack={() => {
             navigate('/');
           }}
+          preferredLanguage={preferredLanguage || 'English'}
         />
       )}
     </>

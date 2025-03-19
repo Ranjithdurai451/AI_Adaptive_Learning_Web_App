@@ -1,19 +1,18 @@
-import { useVideoStore } from "@/lib/store/useVideoStore";
-import { Roadmap } from "@/lib/types";
-import { toSlug } from "@/lib/utils";
+import { useRecentRoadmapsStore } from '@/lib/store/recentRoadmapStore';
+import { Roadmap } from '@/lib/types';
+import { toSlug } from '@/lib/utils';
 import {
   ChevronUp,
   ChevronDown,
   FileText,
-  Youtube,
   CheckCircle2,
   Info,
   ArrowLeft,
   ArrowRight,
   BarChart2,
-} from "lucide-react";
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
+} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router';
 
 type RoadmapViewProps = {
   skill: string;
@@ -29,10 +28,36 @@ const RoadmapView = ({
   preferredLanguage,
 }: RoadmapViewProps) => {
   const navigate = useNavigate();
-  const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
+
+  // Generate a unique key for this roadmap
+  const roadmapKey = `roadmap-${skill}-${score}-${preferredLanguage}`;
+  const completedTopicsKey = `${roadmapKey}-completed`;
+  const expandedDaysKey = `${roadmapKey}-expanded`;
+
+  // Initialize state from localStorage
+  const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>(
+    () => {
+      try {
+        const saved = localStorage.getItem(expandedDaysKey);
+        return saved ? JSON.parse(saved) : {};
+      } catch (error) {
+        console.error('Error loading expanded days from localStorage:', error);
+        return {};
+      }
+    }
+  );
+
   const [completedTopics, setCompletedTopics] = useState<
     Record<string, boolean>
-  >({});
+  >(() => {
+    try {
+      const saved = localStorage.getItem(completedTopicsKey);
+      return saved ? JSON.parse(saved) : {};
+    } catch (error) {
+      console.error('Error loading completed topics from localStorage:', error);
+      return {};
+    }
+  });
 
   const [progress, setProgress] = useState({
     completed: 0,
@@ -40,32 +65,71 @@ const RoadmapView = ({
     percentage: 0,
   });
 
-  const { setSelectedVideo } = useVideoStore();
-  console.log("Score :", score);
-  // Calculate progress
+  // Save to recents function
+  // Get the addOrUpdateRecentRoadmap function from the store
+  const addOrUpdateRecentRoadmap = useRecentRoadmapsStore(
+    (state) => state.addRecentRoadmap
+  );
+
+  // Your existing useEffect, modified to use the Zustand store for recents
   useEffect(() => {
+    // Calculate progress
     let totalTopics = 0;
     roadmap.steps.forEach((step) => {
       totalTopics += step.subTopics.length;
     });
-
     const completedCount =
       Object.values(completedTopics).filter(Boolean).length;
     const percentage =
       totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
-
-    setProgress({
+    const newProgress = {
       completed: completedCount,
       total: totalTopics,
       percentage: percentage,
-    });
-  }, [roadmap.steps, completedTopics]);
+    };
+    setProgress(newProgress);
+
+    // Save completed topics to localStorage
+    const completedTopicsKey = `completed-topics-${skill}-${score}`;
+    localStorage.setItem(completedTopicsKey, JSON.stringify(completedTopics));
+
+    // Create recent roadmap object
+    const recentRoadmap = {
+      skill,
+      score,
+      title: roadmap.title,
+      timestamp: new Date().toISOString(),
+      progress: percentage,
+      preferredLanguage,
+      steps: roadmap.steps.map((step) => ({
+        title: step.title,
+        skillId: step.skillId,
+        expanded: expandedDays[step.title] || false,
+      })),
+    };
+
+    // Add or update in Zustand store (which handles localStorage)
+    addOrUpdateRecentRoadmap(recentRoadmap);
+  }, [
+    completedTopics,
+    expandedDays,
+    preferredLanguage,
+    roadmap,
+    score,
+    skill,
+    addOrUpdateRecentRoadmap,
+  ]);
 
   const toggleDay = (day: string) => {
-    setExpandedDays((prev) => ({
-      ...prev,
-      [day]: !prev[day],
-    }));
+    const newExpandedDays = {
+      ...expandedDays,
+      [day]: !expandedDays[day],
+    };
+
+    setExpandedDays(newExpandedDays);
+
+    // Save expanded state to localStorage
+    localStorage.setItem(expandedDaysKey, JSON.stringify(newExpandedDays));
   };
 
   const toggleTopicCompletion = (
@@ -74,28 +138,49 @@ const RoadmapView = ({
     e: React.MouseEvent
   ) => {
     e.stopPropagation();
-    const topicKey = `${stepId}-${topicIndex}`;
-    setCompletedTopics((prev) => ({
-      ...prev,
-      [topicKey]: !prev[topicKey],
-    }));
+
+    // Create a proper key using stepId and topicIndex
+    // Make sure stepId is a valid string
+    const safeStepId = stepId || `step-${topicIndex}`;
+    const topicKey = `${safeStepId}-topic-${topicIndex}`;
+
+    setCompletedTopics((prev) => {
+      const newCompletedTopics = {
+        ...prev,
+        [topicKey]: !prev[topicKey],
+      };
+
+      // Save to localStorage immediately
+      localStorage.setItem(
+        completedTopicsKey,
+        JSON.stringify(newCompletedTopics)
+      );
+
+      return newCompletedTopics;
+    });
   };
 
   const isTopicCompleted = (stepId: string, topicIndex: number) => {
-    const topicKey = `${stepId}-${topicIndex}`;
+    // Make sure stepId is a valid string
+    const safeStepId = stepId || `step-${topicIndex}`;
+    const topicKey = `${safeStepId}-topic-${topicIndex}`;
     return completedTopics[topicKey] || false;
+  };
+
+  const onBack = () => {
+    navigate(`/`);
   };
 
   return (
     <>
       <div className="w-full flex items-center justify-between px-4 py-2 border-b border-border">
-        <Link
-          to={`/skill-selector`}
+        <button
+          onClick={onBack}
           className="gap-2 flex justify-center items-center"
         >
           <ArrowLeft className="w-4 h-4" />
           <span className="hidden sm:inline">Back</span>
-        </Link>
+        </button>
       </div>
 
       <div className="w-full max-w-5xl mx-auto px-3 sm:px-4 ">
@@ -120,7 +205,7 @@ const RoadmapView = ({
             <div className="flex items-center gap-2">
               <BarChart2 className="w-4 h-4 text-primary" />
               <span className="text-sm">
-                Progress:{" "}
+                Progress:{' '}
                 <span className="font-medium">
                   {progress.completed}/{progress.total}
                 </span>
@@ -190,11 +275,10 @@ const RoadmapView = ({
                     {item.subTopics.map((topic, index) => (
                       <div
                         key={`topic-${index}`}
-                        className={`group grid grid-cols-12 gap-1 transition-colors duration-200 ${
-                          isTopicCompleted(item.skillId, index)
-                            ? "bg-primary/5"
-                            : "hover:bg-muted/20"
-                        }`}
+                        className={`group grid grid-cols-12 gap-1 transition-colors duration-200 ${isTopicCompleted(item.skillId, index)
+                          ? 'bg-primary/5'
+                          : 'hover:bg-muted/20'
+                          }`}
                         onClick={(e) =>
                           toggleTopicCompletion(item.skillId, index, e)
                         }
@@ -205,8 +289,8 @@ const RoadmapView = ({
                             className="w-5 h-5 rounded-full flex items-center justify-center transition-colors"
                             aria-label={
                               isTopicCompleted(item.skillId, index)
-                                ? "Mark as incomplete"
-                                : "Mark as complete"
+                                ? 'Mark as incomplete'
+                                : 'Mark as complete'
                             }
                             onClick={(e) =>
                               toggleTopicCompletion(item.skillId, index, e)
@@ -222,11 +306,10 @@ const RoadmapView = ({
 
                         {/* Topic content */}
                         <div
-                          className={`col-span-10 sm:col-span-8 py-3 pr-2 pl-0 sm:px-3 font-medium text-sm ${
-                            isTopicCompleted(item.skillId, index)
-                              ? "line-through opacity-70"
-                              : ""
-                          }`}
+                          className={`col-span-10 sm:col-span-8 py-3 pr-2 pl-0 sm:px-3 font-medium text-sm ${isTopicCompleted(item.skillId, index)
+                            ? 'line-through opacity-70'
+                            : ''
+                            }`}
                         >
                           {topic}
 
@@ -243,7 +326,8 @@ const RoadmapView = ({
                           <button
                             className="p-1.5 rounded-md hover:bg-muted/60 transition-colors"
                             aria-label="Read article"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               navigate(
                                 `/roadmap/${toSlug(
                                   topic
@@ -253,21 +337,6 @@ const RoadmapView = ({
                           >
                             <FileText className="w-4 h-4 text-blue-500" />
                           </button>
-
-                          {index === 0 || index === 1 ? (
-                            <button
-                              className="p-1.5 rounded-md hover:bg-muted/60 transition-colors"
-                              aria-label="Watch video"
-                              onClick={() => setSelectedVideo("dQw4w9WgXcQ")}
-                            >
-                              <Youtube className="w-4 h-4 text-red-600" />
-                            </button>
-                          ) : (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Info className="w-3 h-3" />
-                              <span>Soon</span>
-                            </div>
-                          )}
                         </div>
                       </div>
                     ))}
@@ -287,7 +356,7 @@ const RoadmapView = ({
 
           <div className="flex gap-2">
             <Link
-              to={"/skill-selector"}
+              to={'/skill-selector'}
               className="px-3 py-1.5 border border-border rounded-md text-xs font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
             >
               <ArrowLeft className="w-3 h-3" />

@@ -1,5 +1,6 @@
 import { prerequisites } from "./lib/data";
 import {
+  fetchWithRetry,
   filterVideos,
   formatVideoData,
   generateQuiz,
@@ -13,12 +14,8 @@ import { createClient } from "redis";
 import { Elysia } from "elysia";
 import cors from "@elysiajs/cors";
 import pLimit from "p-limit";
-import type {
-  TopicExplanation,
-  SectionVideoMap,
-  TopicVideoMap,
-  CombinedResponse,
-} from "./lib/types";
+import type { CombinedResponse, LearningResource, Resource } from "./lib/types";
+import { redis } from "googleapis/build/src/apis/redis";
 
 // interface CombinedResponse extends TopicExplanation {
 //   videos: SectionVideoMap;
@@ -28,7 +25,7 @@ const redisClient = createClient({
   url: process.env.REDIS_URL || "",
 });
 
-await redisClient.connect(); // Ensure Redis is connected before using it
+redisClient.on("error", (err) => console.log("Redis Client Error", err));
 
 const app = new Elysia({
   serve: {
@@ -112,18 +109,8 @@ app.get("/api/generate_topic_explanation", async ({ query }) => {
     }
 
     // Call the retry function
-    const explanation = await generateTopicExplanation(topic, stepTitle);
-    // {
-    //   eplanation:,
-    //   youtube_data:[
-    //     {
-    //       youtube_url,
+    const explanation = await fetchWithRetry(topic, stepTitle);
 
-    //     }{
-
-    //     }
-    //   ]
-    // }
     // Store the successful response in cache
     if (explanation && !explanation.error)
       await redisClient.set(cacheKey, JSON.stringify(explanation), {
@@ -140,158 +127,70 @@ app.get("/api/generate_topic_explanation", async ({ query }) => {
 app.get("/api/generate_topic_explanation_with_videos", async ({ query }) => {
   try {
     const { topic, stepTitle, language = "English" } = query;
-
+    console.log("Started")
+    let explanation: LearningResource | null = null;
     if (!topic || !stepTitle) {
       return { error: "Topic and Step Title are required." };
     }
 
-    // Generate topic explanation first
-    const cacheKey = `${topic}-${stepTitle}`;
-    let explanation: TopicExplanation | null = null;
-
+    const cacheKey = `${topic}-${stepTitle}-${language}`;
     const cacheExists = await redisClient.get(cacheKey);
     if (cacheExists) {
       console.log("Cache Hit!!");
-      explanation = JSON.parse(cacheExists) as TopicExplanation;
+      const combined_cache_response = JSON.parse(
+        cacheExists
+      ) as CombinedResponse;
+      return combined_cache_response;
     } else {
-      explanation = await generateTopicExplanation(topic, stepTitle);
+      explanation = await fetchWithRetry(topic, stepTitle);
 
-      // Store the successful response in cache
-      if (explanation && !("error" in explanation)) {
-        await redisClient.set(cacheKey, JSON.stringify(explanation), {
-          EX: Number(process.env.REDIS_CACHE_EXP_DURATION) || 2592000,
-        });
+      if (!explanation || "error" in explanation) {
+        return explanation || { error: "Failed to generate topic explanation" };
       }
+
+
+      const resourcesTitles = explanation.resources
+        .map((resource: Resource) => resource.title)
+        .join(",");
+      const combinedSearchQuery = await generateSearchQuery(
+        topic,
+        resourcesTitles,
+        language
+      );
+
+      const videos = await searchYouTubeVideos(combinedSearchQuery, language);
+      let filteredVideos = await filterVideos(videos, true);
+
+      if (!filteredVideos || filteredVideos.length === 0) {
+        console.log("No recent videos found, looking for older videos...");
+        filteredVideos = await filterVideos(videos, false);
+      }
+
+      let bestVideos = [];
+      if (filteredVideos && filteredVideos.length > 0) {
+        bestVideos = selectBestVideo(filteredVideos, language);
+      }
+
+      const formattedVideos = bestVideos.map(formatVideoData);
+
+      const result: CombinedResponse = {
+        ...explanation,
+        videos: formattedVideos.length > 0 ? formattedVideos : [{ error: "No suitable videos found" }],
+      };
+
+      redisClient.set(cacheKey, JSON.stringify(result), {
+        EX: Number(process.env.REDIS_CACHE_EXP_DURATION) || 2592000,
+      });
+
+      return result;
     }
-
-    if (!explanation || "error" in explanation) {
-      return explanation || { error: "Failed to generate topic explanation" };
-    }
-
-    // Now fetch videos for each section
-    const videoResults: SectionVideoMap = {};
-
-    // Process all sections in parallel
-    await Promise.all(
-      explanation.sections.map(async (section) => {
-        // Combine the main topic and section title for better video search
-        const searchQuery = await generateSearchQuery(
-          topic,
-          section.title,
-          language
-        );
-
-        const videos = await searchYouTubeVideos(searchQuery, language);
-
-        // Try with recent videos first
-        let filteredVideos = await filterVideos(videos, true);
-
-        // If no recent videos found, try with older videos
-        if (!filteredVideos || filteredVideos.length === 0) {
-          console.log("No recent videos found, looking for older videos...");
-          filteredVideos = await filterVideos(videos, false);
-        }
-
-        if (filteredVideos && filteredVideos.length > 0) {
-          const bestVideo = selectBestVideo(filteredVideos);
-          videoResults[section.title] = {
-            video: formatVideoData(bestVideo),
-          };
-        } else {
-          videoResults[section.title] = {
-            error: "No suitable videos found",
-          };
-        }
-      })
-    );
-
-    const transformedVideos: TopicVideoMap = {};
-    for (const [sectionTitle, videoData] of Object.entries(videoResults)) {
-      transformedVideos[sectionTitle] = { default: videoData };
-    }
-
-    // Combine explanation with transformed video data
-    const result: CombinedResponse = {
-      ...explanation,
-      videos: transformedVideos,
-    };
-
-    return result;
   } catch (error) {
     console.error("API Error:", error);
     return { error: "Internal Server Error" };
   }
 });
 
-app.get("/api/generate_batch_explanations", async ({ query }) => {
-  try {
-    const { topic, stepTitles } = query as {
-      topic: string;
-      stepTitles: string;
-    };
-    if (!topic || !stepTitles) {
-      return { error: "Topic and stepTitles (comma-separated) are required." };
-    }
 
-    const stepTitlesArray = stepTitles.split(",").map((title) => title.trim());
-    const redisKeys = stepTitlesArray.map((title) => `${topic}-${title}`);
-
-    // 🚀 Step 1: Optimize Redis Lookup (Use `mget` instead of `multi()`)
-    const cachedData = await redisClient.mGet(redisKeys);
-
-    let results: Record<string, any> = {};
-    let missingTitles: string[] = [];
-
-    // 🚀 Step 2: Separate Cached & Missing Data Efficiently
-    cachedData.forEach((cachedItem, index) => {
-      if (cachedItem) {
-        results[stepTitlesArray[index]] = JSON.parse(cachedItem);
-      } else {
-        missingTitles.push(stepTitlesArray[index]);
-      }
-    });
-
-    // 🚀 Step 3: Fetch Missing Explanations Efficiently
-    if (missingTitles.length > 0) {
-      console.log(`Fetching missing explanations for: ${missingTitles}`);
-
-      const limit = pLimit(3);
-      const fetchPromises = missingTitles.map((title) =>
-        limit(() => generateTopicExplanation(topic, title))
-      );
-
-      const newExplanations = await Promise.all(fetchPromises);
-
-      // 🚀 Step 4: Store New Results in Redis in One Batch (Use `mset`)
-      const redisPayload: string[] = [];
-      newExplanations.forEach((explanation, index) => {
-        const title = missingTitles[index];
-        results[title] = explanation;
-        redisPayload.push(`${topic}-${title}`, JSON.stringify(explanation));
-      });
-
-      if (redisPayload.length > 0) {
-        const redisPayloadObject = Object.fromEntries(
-          redisPayload.reduce((acc, _, i, arr) => {
-            if (i % 2 === 0) acc.push([arr[i], arr[i + 1]]);
-            return acc;
-          }, [] as [string, string][])
-        );
-        await redisClient.mSet(redisPayloadObject);
-        await Promise.all(
-          missingTitles.map(
-            (title) => redisClient.expire(`${topic}-${title}`, 86400) // Set TTL
-          )
-        );
-      }
-    }
-
-    return results;
-  } catch (error) {
-    console.error("Batch API Error:", error);
-    return { error: "Internal Server Error" };
-  }
-});
 
 // Clear Cache API
 app.get("/api/clear_cache", async () => {
@@ -306,6 +205,7 @@ app.get("/api/clear_cache", async () => {
 });
 
 // Start the server
-app.listen(process.env.PORT || 3000, () => {
+app.listen(process.env.PORT || 3000, async () => {
+  await redisClient.connect(); // Ensure Redis is connected before using it
   console.log(`Server running at http://localhost:${process.env.PORT || 3000}`);
 });

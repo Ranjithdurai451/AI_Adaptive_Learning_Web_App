@@ -40,7 +40,8 @@ export interface VideoError {
 // }
 
 export interface CombinedResponse extends LearningResource {
-  videos: VideoData[] | VideoError[];
+  // videos: VideoData[] | VideoError[];
+  videos: any;
 }
 
 // Type definitions for the topic explanation

@@ -26,7 +26,7 @@ export const useRecentRoadmapsStore = create<RecentRoadmapsState>()(
             addRecentRoadmap: (roadmap: RecentRoadmap) => set((state) => {
                 // Check if roadmap already exists
                 const existingIndex = state.recentRoadmaps.findIndex(
-                    (item) => item.skill === roadmap.skill && item.score === roadmap.score
+                    (item) => item.skill === roadmap.skill && item.score === roadmap.score && item.preferredLanguage === roadmap.preferredLanguage
                 );
 
                 let updatedRoadmaps = [...state.recentRoadmaps];

@@ -60,7 +60,7 @@ Ensure:
 Format:
 {
   "roadmap": {
-    "title": "Complete Learning Path for ${topic}",
+    "title": "Complete Learning Path for ${topic},it should be consise and 2 to 3 words",
     "skillId": "${topic}",
     "description": "Comprehensive learning path for ${topic} including prerequisites and progression from fundamentals to advanced concepts.",
     "prerequisites": ${JSON.stringify(prerequisites[topic]) || []},
@@ -136,7 +136,7 @@ Ensure:
 Format:
 {
   "roadmap": {
-    "title": "Give best title for this roadmap topic ${topic}",
+    "title": "Give best title for this roadmap topic ${topic} it should be consise and 2 to 3 words",
     "skillId": "${topic}",
     "description": "Comprehensive learning path for ${topic} including prerequisites (about 5-8 lines)",
     "prerequisites": [],
@@ -217,8 +217,8 @@ export async function generateTopicExplanation(
    - This should only focus on "${stepTitle}" if it's a language or framework or technology; otherwise, everything should be content related to the main topic "${topic}".
    - Make sure the generated JSON data can be properly parsed and used in the frontend.
    - The information and content should be simple and easy to understand for users.
-   - The content should be simple ,easy to understand and more informative
-   - Give  proper section title so that we can fetch related corresponding video from youtube
+   - Make sure the generated JSON data can be properly parsed and used in the frontend.
+   - get atleast 5-8 sections
    - Makesure that given json data is in correct format
    
    The response must be formatted as valid JSON with this exact structure:
@@ -319,13 +319,13 @@ export async function generateSearchQuery(
   resourcesTitles: string,
   language: string
 ) {
-  const prompt = `I have these resource titles related to a programming concept:
+  const prompt = `I have these resource titles related ${topic} to a programming concept:
 "${resourcesTitles}"
 
 Based on these titles, identify the core concept they cover and create an effective YouTube search query.
 
 Your task:
-1. Identify the main programming concept these resources are about
+1. Identify the main ${topic} programming concept  ${resourcesTitles} these resources are about.
 2. Create a clear, concise search query using this concept + "tutorial"
 3. ALWAYS append "in ${language}" at the end .
 4. If ${language} is English, do not append anything about language
@@ -385,82 +385,206 @@ export async function searchYouTubeVideos(query: string, language: string) {
   return response.data.items || [];
 }
 
-export async function filterVideos(videos: any, enforceRecentOnly = true) {
+export async function filterVideos(
+  videos: any,
+  searchQuery: string,
+  preferredLanguage: string = "en",
+  minDurationMinutes: number = 5,
+  maxAgeMonths: number = 36
+) {
   if (!videos.length) return [];
 
   const videoIds = videos.map((v: any) => v.id.videoId).join(",");
   const details = await youtube.videos.list({
-    part: ["snippet,statistics,contentDetails,topicDetails"],
+    part: ["snippet,statistics,contentDetails"],
     id: videoIds,
   });
 
   console.log(
-    `Retrieved detailed information for ${details.data.items?.length || 0} videos`
+    `Retrieved detailed information for ${details.data.items?.length || 0
+    } videos`
   );
 
-  // First filter step: apply basic quality criteria
-  const filtered = details.data.items?.filter((video) => {
-    // Parse duration properly
-    const duration = parseDuration(video.contentDetails?.duration || "PT0S");
-    const publishedAt = new Date(video?.snippet?.publishedAt || new Date());
-    const likeCount = parseInt(video?.statistics?.likeCount || "0");
-    const viewCount = parseInt(video?.statistics?.viewCount || "0");
-    const commentCount = parseInt(video?.statistics?.commentCount || "0");
-    const likeToViewRatio = viewCount > 0 ? likeCount / viewCount : 0;
+  // Calculate relevance scores for all videos
+  const keywordsFromQuery = searchQuery
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((kw) => kw.length > 2);
 
-    // Check if the video title contains keywords that suggest it's a tutorial
-    const titleLower = video.snippet?.title?.toLowerCase() || "";
-    const descriptionLower = video.snippet?.description?.toLowerCase() || "";
+  const allVideosWithScores =
+    details.data.items?.map((video) => {
+      const title = video.snippet?.title?.toLowerCase() || "";
+      const description = video.snippet?.description?.toLowerCase() || "";
 
-    const isTutorial =
-      titleLower.includes("tutorial") ||
-      titleLower.includes("guide") ||
-      titleLower.includes("learn") ||
-      titleLower.includes("how to") ||
-      descriptionLower.includes("tutorial") ||
-      descriptionLower.includes("step by step");
+      // Calculate relevance score based on keywords in title and description
+      let relevanceScore = 0;
+      keywordsFromQuery.forEach((keyword) => {
+        // Higher weight for keywords in title
+        if (title.includes(keyword)) relevanceScore += 2;
+        // Lower weight for keywords in description
+        if (description.includes(keyword)) relevanceScore += 1;
+        // Bonus for exact phrase matches
+        if (title.includes(searchQuery.toLowerCase())) relevanceScore += 5;
+      });
 
-    // Check if video has educational topics
-    const hasEducationalTopic = video.topicDetails?.topicCategories?.some(
-      (topic: string) =>
-        topic.includes("Education") ||
-        topic.includes("Knowledge") ||
-        topic.includes("Science") ||
-        topic.includes("Technology")
-    ) || false;
+      // Add duration info
+      const duration = parseDuration(video.contentDetails?.duration || "PT0S");
+      const isLanguageMatch = checkIfLanguageVideo(video, preferredLanguage);
+      const publishedAt = new Date(video?.snippet?.publishedAt || new Date());
+      const cutoffDate = new Date();
+      cutoffDate.setMonth(cutoffDate.getMonth() - maxAgeMonths);
+      const isRecent = publishedAt >= cutoffDate;
+      const meetsDuration = duration >= minDurationMinutes;
 
-    // Enhanced quality checks
-    const hasGoodEngagement = (likeCount >= 10 && viewCount >= 1500) || (likeToViewRatio > 0.02);
-    const hasComments = commentCount > 5; // Videos with comments suggest user engagement
-    const hasReasonableDuration = duration >= 3 && duration <= 60; // Between 3 and 60 minutes
-    const hasGoodContent = isTutorial || hasEducationalTopic;
+      return {
+        video,
+        relevanceScore,
+        duration,
+        isLanguageMatch,
+        isRecent,
+        publishedAt,
+        meetsDuration,
+      };
+    }) || [];
 
-    // Log filtering decisions for debugging
-    console.log(
-      `Video "${video.snippet?.title}" - Duration: ${duration}min, Likes: ${likeCount}, Views: ${viewCount}, Like/View: ${likeToViewRatio.toFixed(4)}, Comments: ${commentCount}, Tutorial: ${isTutorial}, Educational: ${hasEducationalTopic}`
-    );
-
-    if (enforceRecentOnly) {
-      // For recent videos: published within the last 3 years
-      const threeYearsAgo = new Date();
-      threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
-      return (
-        hasGoodEngagement &&
-        hasReasonableDuration &&
-        hasComments &&
-        publishedAt >= threeYearsAgo &&
-        hasGoodContent
+  // Log all videos with their scores
+  console.log("Videos sorted by title relevance:");
+  allVideosWithScores
+    .sort((a, b) => b.relevanceScore - a.relevanceScore)
+    .slice(0, Math.min(10, allVideosWithScores.length))
+    .forEach((item, index) => {
+      console.log(
+        `${index + 1}. Score: ${item.relevanceScore}, Title: "${item.video.snippet?.title
+        }"`
       );
-    } else {
-      // For older videos: looser criteria but still ensure good quality
-      return hasGoodEngagement && hasReasonableDuration && hasComments && hasGoodContent;
+    });
+
+  // Apply filters while preserving relevance order
+  const filteredVideos = allVideosWithScores.slice(0, Math.min(10, allVideosWithScores.length)).filter((item) => {
+    // First, filter by language
+    if (!item.isLanguageMatch) {
+      return false;
     }
+
+    // Then by recency
+    if (!item.isRecent) {
+      return false;
+    }
+
+    // Finally by duration
+    if (!item.meetsDuration) {
+      return false;
+    }
+
+    return true;
   });
 
-  console.log(`After filtering, ${filtered?.length || 0} videos remain`);
-  return filtered || [];
-}
+  console.log(`After all filters, ${filteredVideos.length} videos remain`);
 
+  // If we have videos that pass all filters, return top 3 by relevance
+  if (filteredVideos.length > 0) {
+    // Sort by relevance score (highest first)
+    filteredVideos.sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+    console.log("Top videos after all filters (sorted by relevance):");
+    filteredVideos
+      .slice(0, Math.min(3, filteredVideos.length))
+      .forEach((item, index) => {
+        console.log(
+          `${index + 1}. ` +
+          `Relevance: ${item.relevanceScore}, ` +
+          `Title: "${item.video.snippet?.title}", ` +
+          `Duration: ${item.duration}min, ` +
+          `Published: ${item.publishedAt.toLocaleDateString()}`
+        );
+      });
+
+    return filteredVideos
+      .slice(0, Math.min(3, filteredVideos.length))
+      .map((item) => item.video);
+  }
+
+  // First fallback: Try with language and minimum duration, but relax recency
+  const languageDurationVideos = allVideosWithScores.filter(
+    (item) => item.isLanguageMatch && item.meetsDuration
+  );
+
+  if (languageDurationVideos.length > 0) {
+    // Sort by relevance score (highest first)
+    languageDurationVideos.sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+    console.log(
+      "Fallback 1: Language and duration matched videos sorted by relevance:"
+    );
+    languageDurationVideos
+      .slice(0, Math.min(3, languageDurationVideos.length))
+      .forEach((item, index) => {
+        console.log(
+          `${index + 1}. ` +
+          `Relevance: ${item.relevanceScore}, ` +
+          `Title: "${item.video.snippet?.title}", ` +
+          `Duration: ${item.duration}min, ` +
+          ` Recent: ${item.isRecent}`
+        );
+      });
+
+    return languageDurationVideos
+      .slice(0, Math.min(3, languageDurationVideos.length))
+      .map((item) => item.video);
+  }
+
+  // Second fallback: Try with just duration requirement
+  const durationVideos = allVideosWithScores.filter(
+    (item) => item.meetsDuration
+  );
+
+  if (durationVideos.length > 0) {
+    // Sort by relevance score (highest first)
+    durationVideos.sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+    console.log("Fallback 2: Duration-matched videos sorted by relevance:");
+    durationVideos
+      .slice(0, Math.min(3, durationVideos.length))
+      .forEach((item, index) => {
+        console.log(
+          `${index + 1}. ` +
+          `Relevance: ${item.relevanceScore}, ` +
+          `Title: "${item.video.snippet?.title}", ` +
+          `Duration: ${item.duration}min, ` +
+          `Language match: ${item.isLanguageMatch}`
+        );
+      });
+
+    return durationVideos
+      .slice(0, Math.min(3, durationVideos.length))
+      .map((item) => item.video);
+  }
+
+  // Final fallback: Just return top 3 most relevant videos regardless of other criteria
+  // This should only happen if no videos meet the duration requirement
+  console.log(
+    "Final fallback: Most relevant videos regardless of criteria (no videos meet duration requirement)"
+  );
+  allVideosWithScores.sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+  console.log(
+    "Warning: Returning videos that don't meet minimum duration requirement as a last resort"
+  );
+  allVideosWithScores
+    .slice(0, Math.min(3, allVideosWithScores.length))
+    .forEach((item, index) => {
+      console.log(
+        `${index + 1}. ` +
+        `Relevance: ${item.relevanceScore}, ` +
+        `Title: "${item.video.snippet?.title}", ` +
+        `Duration: ${item.duration}min(below minimum requirement)`
+      );
+    });
+
+  return allVideosWithScores
+    .slice(0, Math.min(3, allVideosWithScores.length))
+    .map((item) => item.video);
+}
 export function parseDuration(duration: string): number {
   try {
     // Handle PT1H30M15S format properly
@@ -482,54 +606,7 @@ export function parseDuration(duration: string): number {
   }
 }
 
-export function selectBestVideo(videos: any, preferredLanguage: string = "en") {
-  if (!videos.length) return [];
-  if (videos.length === 1) return [videos[0]];
 
-  // Score and rank the videos
-  const scoredVideos = videos.map((video: any) => {
-    // Calculate base score
-    const score = calculateVideoScore(video);
-    // Check if the video matches the preferred language
-    const isPreferredLanguageVideo = checkIfLanguageVideo(
-      video,
-      preferredLanguage
-    );
-    // Apply language bonus if the video is in the preferred language
-    const languageBonus = isPreferredLanguageVideo ? 50 : 0;
-
-    // Calculate average watch time (approximation)
-    const viewCount = parseInt(video.statistics?.viewCount || "0");
-    const duration = parseDuration(video.contentDetails?.duration || "PT0S");
-    const likeCount = parseInt(video.statistics?.likeCount || "0");
-    const estimatedRetentionRate = Math.min(0.9, 0.3 + (likeCount / (viewCount || 1)) * 50);
-    const estimatedWatchTime = duration * estimatedRetentionRate;
-    const watchTimeScore = Math.min(20, estimatedWatchTime / 3);
-
-    return {
-      video,
-      score: score + languageBonus + watchTimeScore,
-      isPreferredLanguageVideo,
-      watchTimeScore
-    };
-  });
-
-  // Sort by score (highest first)
-  scoredVideos.sort((a: any, b: any) => b.score - a.score);
-
-  // Log the top 5 videos for debugging
-  console.log(
-    `Top 5 videos by score (with ${preferredLanguage} language priority):`
-  );
-  scoredVideos.slice(0, 5).forEach((item: any, index: number) => {
-    console.log(
-      `${index + 1}. Score: ${item.score.toFixed(2)}, Lang: ${item.isPreferredLanguageVideo}, WatchTime: ${item.watchTimeScore.toFixed(2)}, Title: "${item.video.snippet.title}", Views: ${item.video.statistics.viewCount}`
-    );
-  });
-
-  // Return the top 3 videos
-  return scoredVideos.slice(0, 3).map((item: any) => item.video);
-}
 
 // Helper function to detect if a video matches a specific language
 function checkIfLanguageVideo(video: any, language: string): boolean {
@@ -589,86 +666,7 @@ function checkIfLanguageVideo(video: any, language: string): boolean {
   );
 }
 
-function calculateVideoScore(video: any) {
-  try {
-    // Parse video metrics
-    const likes = parseInt(video.statistics?.likeCount || "0");
-    const views = parseInt(video.statistics?.viewCount || "0");
-    const comments = parseInt(video.statistics?.commentCount || "0");
-    const daysSinceUpload = Math.max(
-      1,
-      (Date.now() - new Date(video.snippet.publishedAt).getTime()) /
-      (1000 * 86400)
-    );
-    const duration = parseDuration(video.contentDetails?.duration || "PT0S");
 
-    // Score title relevance
-    const title = video.snippet?.title?.toLowerCase() || "";
-    const description = video.snippet?.description?.toLowerCase() || "";
-
-    // Expanded keywords for better content detection
-    const titleScore =
-      (title.includes("tutorial") ? 7 : 0) +
-      (title.includes("explain") ? 4 : 0) +
-      (title.includes("guide") ? 4 : 0) +
-      (title.includes("learn") ? 3 : 0) +
-      (title.includes("how to") ? 4 : 0) +
-      (title.includes("step by step") ? 5 : 0) +
-      (title.includes("beginner") ? 3 : 0) +
-      (title.includes("complete") ? 2 : 0) +
-      (title.includes("course") ? 3 : 0);
-
-    // Check description quality
-    const descriptionScore =
-      (description.length > 500 ? 5 : 0) +
-      (description.includes("tutorial") ? 2 : 0) +
-      (description.includes("learn") ? 1 : 0) +
-      (description.includes("summary") ? 2 : 0);
-
-    // Check if the video has chapters/timestamps (suggests organized content)
-    const hasChapters = description.includes("0:00") ||
-      description.match(/\d+:\d+/g)?.length > 3;
-    const chapterScore = hasChapters ? 5 : 0;
-
-    // Check if video has subtitles/closed captions
-    const hasSubtitles = video.contentDetails?.caption === "true";
-    const subtitleScore = hasSubtitles ? 4 : 0;
-
-    // Check if channel is verified
-    const isVerified = video.snippet?.channelId?.startsWith("UC") || false; // Simplified check
-    const verifiedScore = isVerified ? 2 : 0;
-
-    // Dynamic weight adjustments
-    const viewsNormalized = Math.min(1, Math.log10(views + 1) / 6); // Normalize to 0-1 scale
-    const likesNormalized = Math.min(1, Math.log10(likes + 1) / 4);
-    const commentsNormalized = Math.min(1, Math.log10(comments + 1) / 3);
-    const likeViewRatio = views > 0 ? Math.min(0.5, likes / views * 2) : 0;
-    const recencyFactor = 1 / Math.sqrt(daysSinceUpload);
-
-    // Prefer videos between 10-30 minutes (ideal tutorial length)
-    const durationFactor =
-      duration > 5 && duration < 45 ? 1 - Math.abs(duration - 20) / 30 : 0.1;
-
-    // Calculate final score with balanced weights
-    const score =
-      viewsNormalized * 15 +
-      likesNormalized * 20 +
-      commentsNormalized * 10 +
-      likeViewRatio * 15 +
-      recencyFactor * 15 +
-      durationFactor * 15 +
-      titleScore * 2.5 +
-      descriptionScore * 1.5 +
-      chapterScore +
-      subtitleScore +
-      verifiedScore;
-
-    return score;
-  } catch (e) {
-    console.error("Error calculating score:", e);
-    return 0;
-  }
-}
 
 export function formatVideoData(video: any) {
   if (!video) return null;
@@ -700,18 +698,10 @@ export function formatVideoData(video: any) {
       title: video.snippet.title,
       url: `https://youtu.be/${video.id}`,
       publishedAt: video.snippet.publishedAt,
-      // publishedFormatted: ageText,
       likes: video.statistics?.likeCount || "0",
       views: formattedViews,
-      // likeRatio: likeRatio,
       duration: durationText,
       videoId: video.id,
-      // thumbnails: video.snippet.thumbnails,
-      // channelTitle: video.snippet.channelTitle,
-      // channelId: video.snippet.channelId,
-      // channelUrl: `https://www.youtube.com/channel/${video.snippet.channelId}`,
-      // description: video.snippet.description,
-      // hasSubtitles: video.contentDetails?.caption === "true"
     };
   } catch (e) {
     console.error("Error formatting video data:", e);

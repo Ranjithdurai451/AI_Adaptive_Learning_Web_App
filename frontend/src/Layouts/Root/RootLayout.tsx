@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import SparkLoader from './components/SparkLoader';
 import { cn } from '@/lib/utils';
 import { Link, Outlet, useLocation } from 'react-router';
-import RecentRoadmaps from './components/RecentRoadmaps';
+import RecentRoadmaps from '../../features/recent_roadmap/components/RecentRoadmaps';
 import YouTubeCard from './components/YoutubeCard';
 
 export default function RootLayout() {
@@ -54,10 +54,11 @@ export default function RootLayout() {
         >
           <header className="shadow-md sticky top-0 z-10 bg-background/90 backdrop-blur-sm border-b border-border flex justify-between items-center p-4">
             <Link to="/" className="text-xl font-bold">
-              SparkLearn
+              <span className="hidden sm:block">SparkLearn</span>
+              <span className="sm:hidden block">SL</span>
             </Link>
             <div className="flex items-center gap-4">
-              <RecentRoadmaps />
+              {location.pathname === '/' && <RecentRoadmaps />}
               <button
                 className="p-2 rounded-full bg-muted hover:bg-muted/80 transition-colors duration-200"
                 onClick={toggleTheme}

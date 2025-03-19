@@ -7,6 +7,7 @@ import { ThemeProvider } from './components/ui/ThemeProvider';
 import Home from './Layouts/Root/components/Home';
 import RoadmapLayout from './features/roadmap/routes/RoadmapLayout';
 import TopicExplanation from './features/roadmap/routes/TopicExplanation';
+import RecentRoadmapPage from './features/recent_roadmap/routes/RecentRoadmapPage';
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,10 @@ const router = createBrowserRouter([
             element: <TopicExplanation />,
           },
         ],
+      },
+      {
+        path: '/roadmaps',
+        element: <RecentRoadmapPage />,
       },
     ],
   },

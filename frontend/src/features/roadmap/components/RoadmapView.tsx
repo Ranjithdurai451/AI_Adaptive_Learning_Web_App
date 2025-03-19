@@ -275,28 +275,27 @@ const RoadmapView = ({
                     {item.subTopics.map((topic, index) => (
                       <div
                         key={`topic-${index}`}
-                        className={`group grid grid-cols-12 gap-1 transition-colors duration-200 ${isTopicCompleted(item.skillId, index)
-                          ? 'bg-primary/5'
-                          : 'hover:bg-muted/20'
-                          }`}
-                        onClick={(e) =>
-                          toggleTopicCompletion(item.skillId, index, e)
-                        }
+                        className={`group grid grid-cols-12 gap-1 transition-colors duration-200 ${
+                          isTopicCompleted(topic, index)
+                            ? 'bg-primary/5'
+                            : 'hover:bg-muted/20'
+                        }`}
+                        onClick={(e) => toggleTopicCompletion(topic, index, e)}
                       >
                         {/* Status checkbox */}
                         <div className="col-span-2 sm:col-span-1 py-3 px-2 flex justify-center items-center">
                           <button
                             className="w-5 h-5 rounded-full flex items-center justify-center transition-colors"
                             aria-label={
-                              isTopicCompleted(item.skillId, index)
+                              isTopicCompleted(topic, index)
                                 ? 'Mark as incomplete'
                                 : 'Mark as complete'
                             }
                             onClick={(e) =>
-                              toggleTopicCompletion(item.skillId, index, e)
+                              toggleTopicCompletion(topic, index, e)
                             }
                           >
-                            {isTopicCompleted(item.skillId, index) ? (
+                            {isTopicCompleted(topic, index) ? (
                               <CheckCircle2 className="w-4 h-4 text-primary" />
                             ) : (
                               <div className="w-4 h-4 rounded-full border-2 border-muted-foreground group-hover:border-primary transition-colors"></div>
@@ -306,10 +305,11 @@ const RoadmapView = ({
 
                         {/* Topic content */}
                         <div
-                          className={`col-span-10 sm:col-span-8 py-3 pr-2 pl-0 sm:px-3 font-medium text-sm ${isTopicCompleted(item.skillId, index)
-                            ? 'line-through opacity-70'
-                            : ''
-                            }`}
+                          className={`col-span-10 sm:col-span-8 py-3 pr-2 pl-0 sm:px-3 font-medium text-sm ${
+                            isTopicCompleted(topic, index)
+                              ? 'line-through opacity-70'
+                              : ''
+                          }`}
                         >
                           {topic}
 

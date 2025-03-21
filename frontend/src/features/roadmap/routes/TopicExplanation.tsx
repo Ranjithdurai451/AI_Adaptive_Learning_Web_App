@@ -1,28 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 
-import {
-  ArrowLeft,
-  Type,
-  Menu,
-  ChevronRight,
-  ArrowUp,
-  Youtube,
-  Info,
-  ExternalLink,
-} from 'lucide-react';
+import { ArrowLeft, Type, Menu, ChevronRight, ArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import Loader from '@/Layouts/Root/components/Loader';
-import {
-  generateDetailedExplanation,
-  generateDetailedExplanationWithVideos,
-} from '@/lib/actions';
+import { generateDetailedExplanationWithVideos } from '@/lib/actions';
 import CodeBlock from '@/components/ui/CodeBlock';
 import { CombinedResponse, LearningResource } from '@/lib/types';
 import { useVideoStore } from '@/lib/store/useVideoStore';
@@ -104,7 +91,6 @@ export default function TopicExplanation() {
   const [isLoading, setIsLoading] = useState(true);
   const [fontSize, setFontSize] = useState('medium');
   const [activeSection, setActiveSection] = useState<string | null>();
-  const [readingProgress, setReadingProgress] = useState(0);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
 
   const contentRef = useRef<HTMLDivElement>(null);
@@ -126,9 +112,6 @@ export default function TopicExplanation() {
         const element = contentRef.current;
         const totalHeight = element.scrollHeight - element.clientHeight;
         const scrollPosition = element.scrollTop;
-        const progress =
-          totalHeight > 0 ? (scrollPosition / totalHeight) * 100 : 0;
-        setReadingProgress(progress);
 
         // Show/hide scroll to top button
         setShowScrollToTop(scrollPosition > 300);
@@ -349,23 +332,6 @@ export default function TopicExplanation() {
                     </div>
                   ))}
                 </div>
-
-                <div className="pt-6 mt-6 border-t">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Reading Time</span>
-                    <Badge variant="outline">
-                      {topicData?.estimatedReadingTime}
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Progress</span>
-                    <span className="text-sm">
-                      {Math.round(readingProgress)}%
-                    </span>
-                  </div>
-                  <Progress value={readingProgress} className="h-1.5 mt-1.5" />
-                </div>
               </div>
             </aside>
 
@@ -411,27 +377,6 @@ export default function TopicExplanation() {
                           </span>
                           {renderTextWithCodeHighlights(section.title)}{' '}
                         </h2>
-                        {/* {(topicData?.videos[section?.title].default?.video) ? (
-                          <button
-                            className="flex items-center justify-center w-8 h-8  rounded-md hover:bg-muted/60 transition-colors"
-                            aria-label="Watch video"
-                            onClick={() =>
-                              // console.log(
-                              //   topicData.videos[section.title]?.default?.video
-                              //     .url
-                              // )
-                              setVideo(
-                                topicData.videos[section.title].default?.video
-                              )
-                            }
-                          >
-                            <ExternalLink className="w-5 h-5 text-red-600" />
-                          </button>
-
-                        ) : (<div className="flex  h-9 items-center justify-center gap-1 text-xs text-muted-foreground">
-                          <Info className="w-5 h-5" />
-                          <span>Soon</span>
-                        </div>)} */}
                       </div>
 
                       <div className="prose dark:prose-invert max-w-none">

@@ -65,18 +65,19 @@ Format:
     "description": "Comprehensive learning path for ${topic} including prerequisites and progression from fundamentals to advanced concepts.",
     "prerequisites": ${JSON.stringify(prerequisites[topic]) || []},
     "steps": [
-      ${prerequisites[topic]
-        ? prerequisites[topic]
-          .map(
-            (prereq) => `{
+      ${
+        prerequisites[topic]
+          ? prerequisites[topic]
+              .map(
+                (prereq) => `{
         "skillId": "${prereq}",
         "title": "Essential ${prereq} Fundamentals",
         "description": "Core ${prereq} concepts required before learning ${topic}",
         "subTopics": ["List 5-8 key subtopics for ${prereq}"]
       }`
-          )
-          .join(",\n") + ","
-        : ""
+              )
+              .join(",\n") + ","
+          : ""
       }
       {
         "skillId": "${topic}-basics",
@@ -201,6 +202,7 @@ Format:
 
 export async function generateTopicExplanation(
   topic: string,
+  subtopic: string,
   stepTitle: string
 ) {
   // Create a prompt that avoids template literal interpolation in the output
@@ -208,18 +210,29 @@ export async function generateTopicExplanation(
   const safeTopicId = stepTitle.toLowerCase().replace(/\s+/g, "-");
   const safeSkillId = stepTitle.toLowerCase().split(/\s+/)[0];
 
-  // -Ensure atleast 5-8 sections minimum
+  // -Ensure at least 5-8 sections minimum
   const prompt = `
-   Generate a comprehensive educational explanation for the "${topic}" under the step "${stepTitle}". 
+   Generate a comprehensive educational explanation for the step "${stepTitle}".
+   
+   Context Information:
+   - Main Topic: "${topic}" (The primary technology or subject area, e.g., "Flutter")
+   - Subtopic: "${subtopic}" (A learning category, e.g., "Flutter Fundamentals" or "Core Concepts & UI Design")
+   - Step: "${stepTitle}" (The specific concept to explain)
+   
+   Content Focus Instructions:
+   - For subtopics that are clearly categories within the main topic (like "Flutter Fundamentals" or "Core Concepts & UI Design" for Flutter):
+     * Focus on explaining "${stepTitle}" as it pertains to "${topic}"
+     * Make all examples, code, and explanations specifically about "${topic}"
+   
+   - For subtopics that represent separate prerequisite skills (like "HTML Fundamentals" would be for React):
+     * Focus on explaining "${stepTitle}" as it pertains to "${subtopic}" directly
+     * Make all examples, code, and explanations specifically about "${subtopic}"
+   
    Ensure:
    - The response is structured in valid JSON format.
-   - The data like content, example, code, resources should be relevant to "${stepTitle}" from basic to pro level in that language or technology or concept.
-   - This should only focus on "${stepTitle}" if it's a language or framework or technology; otherwise, everything should be content related to the main topic "${topic}".
-   - Make sure the generated JSON data can be properly parsed and used in the frontend.
-   - The information and content should be simple and easy to understand for users.
-   - Make sure the generated JSON data can be properly parsed and used in the frontend.
-   - get atleast 5-8 sections
-   - Makesure that given json data is in correct format
+   - Provide 5-8 comprehensive sections about "${stepTitle}"
+   - The content should be educational, accurate, and progress from beginner to advanced concepts
+   - Make sure that given JSON data is in correct format with no syntax errors
    
    The response must be formatted as valid JSON with this exact structure:
    {
@@ -238,8 +251,8 @@ export async function generateTopicExplanation(
          "content": "Write 3-4 detailed paragraphs explaining this concept. Include technical details, history if relevant, and explain why this concept is important.",
          "example": {
            "code": "Provide a practical code example demonstrating this concept if applicable.",
-           "language": "Choose a programming language (JavaScript, Python, etc.)",
-           "filename": "example.js"
+           "language": "Choose a programming language appropriate for the topic",
+           "filename": "example-filename"
          },
          "tips": [
            "Provide 3 practical tips for working with this concept",
@@ -253,8 +266,8 @@ export async function generateTopicExplanation(
          "content": "Write 3-4 detailed paragraphs explaining this concept.",
          "example": {
            "code": "Provide a practical code example demonstrating this concept if applicable.",
-           "language": "Choose a programming language (JavaScript, Python, etc.)",
-           "filename": "example.js"
+           "language": "Choose a programming language appropriate for the topic",
+           "filename": "example-filename"
          },
          "tips": [
            "Provide 3 practical tips for working with this concept",
@@ -314,6 +327,8 @@ export async function generateTopicExplanation(
   }
 }
 
+// Helper function to sanitize JSON string that might have issues
+
 export async function generateSearchQuery(
   topic: string,
   resourcesTitles: string,
@@ -347,20 +362,21 @@ Example output for English: "Java Reflection tutorial"`;
 }
 export async function searchYouTubeVideos(query: string, language: string) {
   // Map common languages to their codes
-  const languageMap: Record<string, { langCode: string; regionCode: string }> = {
-    Tamil: { langCode: "ta", regionCode: "IN" },
-    Hindi: { langCode: "hi", regionCode: "IN" },
-    English: { langCode: "en", regionCode: "US" },
-    Spanish: { langCode: "es", regionCode: "ES" },
-    French: { langCode: "fr", regionCode: "FR" },
-    German: { langCode: "de", regionCode: "DE" },
-    Japanese: { langCode: "ja", regionCode: "JP" },
-    Korean: { langCode: "ko", regionCode: "KR" },
-    Chinese: { langCode: "zh", regionCode: "CN" },
-    Arabic: { langCode: "ar", regionCode: "SA" },
-    Russian: { langCode: "ru", regionCode: "RU" },
-    // Add more languages as needed
-  };
+  const languageMap: Record<string, { langCode: string; regionCode: string }> =
+    {
+      Tamil: { langCode: "ta", regionCode: "IN" },
+      Hindi: { langCode: "hi", regionCode: "IN" },
+      English: { langCode: "en", regionCode: "US" },
+      Spanish: { langCode: "es", regionCode: "ES" },
+      French: { langCode: "fr", regionCode: "FR" },
+      German: { langCode: "de", regionCode: "DE" },
+      Japanese: { langCode: "ja", regionCode: "JP" },
+      Korean: { langCode: "ko", regionCode: "KR" },
+      Chinese: { langCode: "zh", regionCode: "CN" },
+      Arabic: { langCode: "ar", regionCode: "SA" },
+      Russian: { langCode: "ru", regionCode: "RU" },
+      // Add more languages as needed
+    };
 
   const langSettings = languageMap[language] || {
     langCode: "en",
@@ -380,7 +396,9 @@ export async function searchYouTubeVideos(query: string, language: string) {
   });
 
   console.log(
-    `Found ${response.data.items?.length || 0} initial videos for query: "${query}"`
+    `Found ${
+      response.data.items?.length || 0
+    } initial videos for query: "${query}"`
   );
   return response.data.items || [];
 }
@@ -401,7 +419,8 @@ export async function filterVideos(
   });
 
   console.log(
-    `Retrieved detailed information for ${details.data.items?.length || 0
+    `Retrieved detailed information for ${
+      details.data.items?.length || 0
     } videos`
   );
 
@@ -454,30 +473,33 @@ export async function filterVideos(
     .slice(0, Math.min(10, allVideosWithScores.length))
     .forEach((item, index) => {
       console.log(
-        `${index + 1}. Score: ${item.relevanceScore}, Title: "${item.video.snippet?.title
+        `${index + 1}. Score: ${item.relevanceScore}, Title: "${
+          item.video.snippet?.title
         }"`
       );
     });
 
   // Apply filters while preserving relevance order
-  const filteredVideos = allVideosWithScores.slice(0, Math.min(10, allVideosWithScores.length)).filter((item) => {
-    // First, filter by language
-    if (!item.isLanguageMatch) {
-      return false;
-    }
+  const filteredVideos = allVideosWithScores
+    .slice(0, Math.min(10, allVideosWithScores.length))
+    .filter((item) => {
+      // First, filter by language
+      if (!item.isLanguageMatch) {
+        return false;
+      }
 
-    // Then by recency
-    if (!item.isRecent) {
-      return false;
-    }
+      // Then by recency
+      if (!item.isRecent) {
+        return false;
+      }
 
-    // Finally by duration
-    if (!item.meetsDuration) {
-      return false;
-    }
+      // Finally by duration
+      if (!item.meetsDuration) {
+        return false;
+      }
 
-    return true;
-  });
+      return true;
+    });
 
   console.log(`After all filters, ${filteredVideos.length} videos remain`);
 
@@ -492,10 +514,10 @@ export async function filterVideos(
       .forEach((item, index) => {
         console.log(
           `${index + 1}. ` +
-          `Relevance: ${item.relevanceScore}, ` +
-          `Title: "${item.video.snippet?.title}", ` +
-          `Duration: ${item.duration}min, ` +
-          `Published: ${item.publishedAt.toLocaleDateString()}`
+            `Relevance: ${item.relevanceScore}, ` +
+            `Title: "${item.video.snippet?.title}", ` +
+            `Duration: ${item.duration}min, ` +
+            `Published: ${item.publishedAt.toLocaleDateString()}`
         );
       });
 
@@ -521,10 +543,10 @@ export async function filterVideos(
       .forEach((item, index) => {
         console.log(
           `${index + 1}. ` +
-          `Relevance: ${item.relevanceScore}, ` +
-          `Title: "${item.video.snippet?.title}", ` +
-          `Duration: ${item.duration}min, ` +
-          ` Recent: ${item.isRecent}`
+            `Relevance: ${item.relevanceScore}, ` +
+            `Title: "${item.video.snippet?.title}", ` +
+            `Duration: ${item.duration}min, ` +
+            ` Recent: ${item.isRecent}`
         );
       });
 
@@ -548,10 +570,10 @@ export async function filterVideos(
       .forEach((item, index) => {
         console.log(
           `${index + 1}. ` +
-          `Relevance: ${item.relevanceScore}, ` +
-          `Title: "${item.video.snippet?.title}", ` +
-          `Duration: ${item.duration}min, ` +
-          `Language match: ${item.isLanguageMatch}`
+            `Relevance: ${item.relevanceScore}, ` +
+            `Title: "${item.video.snippet?.title}", ` +
+            `Duration: ${item.duration}min, ` +
+            `Language match: ${item.isLanguageMatch}`
         );
       });
 
@@ -575,9 +597,9 @@ export async function filterVideos(
     .forEach((item, index) => {
       console.log(
         `${index + 1}. ` +
-        `Relevance: ${item.relevanceScore}, ` +
-        `Title: "${item.video.snippet?.title}", ` +
-        `Duration: ${item.duration}min(below minimum requirement)`
+          `Relevance: ${item.relevanceScore}, ` +
+          `Title: "${item.video.snippet?.title}", ` +
+          `Duration: ${item.duration}min(below minimum requirement)`
       );
     });
 
@@ -606,28 +628,44 @@ export function parseDuration(duration: string): number {
   }
 }
 
-
-
 // Helper function to detect if a video matches a specific language
 function checkIfLanguageVideo(video: any, language: string): boolean {
   if (!video) return false;
 
   // Map of language to their language codes and keywords
   const languageMap: Record<string, { code: string; keywords: string[] }> = {
-    english: { code: "en", keywords: ["english", "eng", "in english", "english tutorial"] },
-    tamil: { code: "ta", keywords: ["tamil", "தமிழ்", "தமிழில்", "தமிழ", "tamizh"] },
+    english: {
+      code: "en",
+      keywords: ["english", "eng", "in english", "english tutorial"],
+    },
+    tamil: {
+      code: "ta",
+      keywords: ["tamil", "தமிழ்", "தமிழில்", "தமிழ", "tamizh"],
+    },
     hindi: { code: "hi", keywords: ["hindi", "हिंदी", "हिन्दी", "in hindi"] },
-    spanish: { code: "es", keywords: ["spanish", "español", "espanol", "en español"] },
-    french: { code: "fr", keywords: ["french", "français", "francais", "en français"] },
+    spanish: {
+      code: "es",
+      keywords: ["spanish", "español", "espanol", "en español"],
+    },
+    french: {
+      code: "fr",
+      keywords: ["french", "français", "francais", "en français"],
+    },
     german: { code: "de", keywords: ["german", "deutsch", "auf deutsch"] },
-    japanese: { code: "ja", keywords: ["japanese", "日本語", "japan", "ジャパニーズ"] },
+    japanese: {
+      code: "ja",
+      keywords: ["japanese", "日本語", "japan", "ジャパニーズ"],
+    },
     korean: { code: "ko", keywords: ["korean", "한국어", "korea", "코리안"] },
     chinese: {
       code: "zh",
-      keywords: ["chinese", "中文", "mandarin", "cantonese", "普通话", "國語"]
+      keywords: ["chinese", "中文", "mandarin", "cantonese", "普通话", "國語"],
     },
     arabic: { code: "ar", keywords: ["arabic", "العربية", "عربى", "بالعربية"] },
-    russian: { code: "ru", keywords: ["russian", "русский", "россия", "на русском"] },
+    russian: {
+      code: "ru",
+      keywords: ["russian", "русский", "россия", "на русском"],
+    },
     // Add more languages as needed
   };
 
@@ -644,7 +682,8 @@ function checkIfLanguageVideo(video: any, language: string): boolean {
   const title = video.snippet?.title?.toLowerCase() || "";
   const description = video.snippet?.description?.toLowerCase() || "";
   const channelTitle = video.snippet?.channelTitle?.toLowerCase() || "";
-  const tags = video.snippet?.tags?.map((tag: string) => tag.toLowerCase()) || [];
+  const tags =
+    video.snippet?.tags?.map((tag: string) => tag.toLowerCase()) || [];
 
   // Check if any language keywords are present in title, description, channel name, or tags
   const hasLanguageKeyword = languageData.keywords.some(
@@ -666,8 +705,6 @@ function checkIfLanguageVideo(video: any, language: string): boolean {
   );
 }
 
-
-
 export function formatVideoData(video: any) {
   if (!video) return null;
 
@@ -679,7 +716,8 @@ export function formatVideoData(video: any) {
     // Calculate like to view ratio percentage
     const likes = parseInt(video.statistics?.likeCount || "0");
     const views = parseInt(video.statistics?.viewCount || "0");
-    const likeRatio = views > 0 ? (likes / views * 100).toFixed(2) + "%" : "N/A";
+    const likeRatio =
+      views > 0 ? ((likes / views) * 100).toFixed(2) + "%" : "N/A";
 
     // Format view count with commas
     const formattedViews = new Intl.NumberFormat().format(views);
@@ -687,12 +725,15 @@ export function formatVideoData(video: any) {
     // Calculate video age
     const publishDate = new Date(video.snippet.publishedAt);
     const now = new Date();
-    const ageInDays = Math.floor((now.getTime() - publishDate.getTime()) / (1000 * 60 * 60 * 24));
-    const ageText = ageInDays < 30 ?
-      `${ageInDays} days ago` :
-      ageInDays < 365 ?
-        `${Math.floor(ageInDays / 30)} months ago` :
-        `${Math.floor(ageInDays / 365)} years ago`;
+    const ageInDays = Math.floor(
+      (now.getTime() - publishDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const ageText =
+      ageInDays < 30
+        ? `${ageInDays} days ago`
+        : ageInDays < 365
+        ? `${Math.floor(ageInDays / 30)} months ago`
+        : `${Math.floor(ageInDays / 365)} years ago`;
 
     return {
       title: video.snippet.title,
@@ -756,12 +797,13 @@ function sanitizeJsonString(jsonString: string): string {
 
 export const fetchWithRetry = async (
   topic: string,
+  subtopic: string,
   title: string,
   retries = 3
 ): Promise<any> => {
   let attempt = 0;
   while (attempt < retries) {
-    const explanation = await generateTopicExplanation(topic, title);
+    const explanation = await generateTopicExplanation(topic, subtopic, title);
     if (!explanation.error) return explanation;
     console.error(
       `Retry ${attempt + 1} failed for: ${title},

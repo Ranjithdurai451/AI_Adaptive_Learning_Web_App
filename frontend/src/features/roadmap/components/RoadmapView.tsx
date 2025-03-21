@@ -1,6 +1,6 @@
-import { useRecentRoadmapsStore } from '@/lib/store/recentRoadmapStore';
-import { Roadmap } from '@/lib/types';
-import { toSlug } from '@/lib/utils';
+import { useRecentRoadmapsStore } from "@/lib/store/recentRoadmapStore";
+import { Roadmap } from "@/lib/types";
+import { toSlug } from "@/lib/utils";
 import {
   ChevronUp,
   ChevronDown,
@@ -10,9 +10,9 @@ import {
   ArrowLeft,
   ArrowRight,
   BarChart2,
-} from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router';
+} from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router";
 
 type RoadmapViewProps = {
   skill: string;
@@ -41,7 +41,7 @@ const RoadmapView = ({
         const saved = localStorage.getItem(expandedDaysKey);
         return saved ? JSON.parse(saved) : {};
       } catch (error) {
-        console.error('Error loading expanded days from localStorage:', error);
+        console.error("Error loading expanded days from localStorage:", error);
         return {};
       }
     }
@@ -54,7 +54,7 @@ const RoadmapView = ({
       const saved = localStorage.getItem(completedTopicsKey);
       return saved ? JSON.parse(saved) : {};
     } catch (error) {
-      console.error('Error loading completed topics from localStorage:', error);
+      console.error("Error loading completed topics from localStorage:", error);
       return {};
     }
   });
@@ -205,7 +205,7 @@ const RoadmapView = ({
             <div className="flex items-center gap-2">
               <BarChart2 className="w-4 h-4 text-primary" />
               <span className="text-sm">
-                Progress:{' '}
+                Progress:{" "}
                 <span className="font-medium">
                   {progress.completed}/{progress.total}
                 </span>
@@ -277,8 +277,8 @@ const RoadmapView = ({
                         key={`topic-${index}`}
                         className={`group grid grid-cols-12 gap-1 transition-colors duration-200 ${
                           isTopicCompleted(topic, index)
-                            ? 'bg-primary/5'
-                            : 'hover:bg-muted/20'
+                            ? "bg-primary/5"
+                            : "hover:bg-muted/20"
                         }`}
                         onClick={(e) => toggleTopicCompletion(topic, index, e)}
                       >
@@ -288,8 +288,8 @@ const RoadmapView = ({
                             className="w-5 h-5 rounded-full flex items-center justify-center transition-colors"
                             aria-label={
                               isTopicCompleted(topic, index)
-                                ? 'Mark as incomplete'
-                                : 'Mark as complete'
+                                ? "Mark as incomplete"
+                                : "Mark as complete"
                             }
                             onClick={(e) =>
                               toggleTopicCompletion(topic, index, e)
@@ -307,8 +307,8 @@ const RoadmapView = ({
                         <div
                           className={`col-span-10 sm:col-span-8 py-3 pr-2 pl-0 sm:px-3 font-medium text-sm ${
                             isTopicCompleted(topic, index)
-                              ? 'line-through opacity-70'
-                              : ''
+                              ? "line-through opacity-70"
+                              : ""
                           }`}
                         >
                           {topic}
@@ -331,7 +331,9 @@ const RoadmapView = ({
                               navigate(
                                 `/roadmap/${toSlug(
                                   topic
-                                )}?topic=${skill}&score=${score}&preferredLanguage=${preferredLanguage}`
+                                )}?topic=${skill}&subtopic=${
+                                  item.title
+                                }&score=${score}&preferredLanguage=${preferredLanguage}`
                               );
                             }}
                           >
@@ -356,7 +358,7 @@ const RoadmapView = ({
 
           <div className="flex gap-2">
             <Link
-              to={'/skill-selector'}
+              to={"/skill-selector"}
               className="px-3 py-1.5 border border-border rounded-md text-xs font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
             >
               <ArrowLeft className="w-3 h-3" />

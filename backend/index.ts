@@ -36,7 +36,9 @@ const app = new Elysia({
 });
 
 // Apply CORS middleware to allow cross-origin requests
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_BASE_URL
+}));
 
 /**
  * API endpoint to generate quiz questions for a given topic

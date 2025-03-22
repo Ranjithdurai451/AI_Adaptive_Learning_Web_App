@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -17,7 +17,6 @@ import { motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -33,7 +32,6 @@ import {
 } from "@/components/ui/select";
 import { ScrollableFilterButtons } from "./ScrollableFilterButtons";
 import { useNavigate } from "react-router";
-import RightArrow from "@/components/ui/RightArrow";
 
 export default function SkillSelector() {
   const navigate = useNavigate();
@@ -46,6 +44,9 @@ export default function SkillSelector() {
   const [tempSelectedSkill, setTempSelectedSkill] = useState<Skill | null>(
     null
   );
+  useEffect(() => {
+    setRecommendedSkills(["react", "nodejs", "expressjs", "mongodb"])
+  }, [])
 
   const filteredSkills = skills.filter((skill: any) => {
     const matchesSearch = skill.name

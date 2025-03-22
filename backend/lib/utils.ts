@@ -54,6 +54,7 @@ Ensure:
 - Output is strictly in valid JSON format (without extra characters).
 - The roadmap covers concepts from beginner to pro level.
 - If score is below 60%, include prerequisite topics before the main topic.
+- Here if it is a prerequisite topic then give complete content related to that prerequisite,if not then give content related to that main topic ${topic}.
 - Divide the main topic into multiple logical steps (beginner, intermediate, advanced).
 - Include relevant projects at the end.
 
@@ -65,19 +66,18 @@ Format:
     "description": "Comprehensive learning path for ${topic} including prerequisites and progression from fundamentals to advanced concepts.",
     "prerequisites": ${JSON.stringify(prerequisites[topic]) || []},
     "steps": [
-      ${
-        prerequisites[topic]
-          ? prerequisites[topic]
-              .map(
-                (prereq) => `{
+      ${prerequisites[topic]
+        ? prerequisites[topic]
+          .map(
+            (prereq) => `{
         "skillId": "${prereq}",
         "title": "Essential ${prereq} Fundamentals",
         "description": "Core ${prereq} concepts required before learning ${topic}",
         "subTopics": ["List 5-8 key subtopics for ${prereq}"]
       }`
-              )
-              .join(",\n") + ","
-          : ""
+          )
+          .join(",\n") + ","
+        : ""
       }
       {
         "skillId": "${topic}-basics",
@@ -363,20 +363,20 @@ Example output for English: "Java Reflection tutorial"`;
 export async function searchYouTubeVideos(query: string, language: string) {
   // Map common languages to their codes
   const languageMap: Record<string, { langCode: string; regionCode: string }> =
-    {
-      Tamil: { langCode: "ta", regionCode: "IN" },
-      Hindi: { langCode: "hi", regionCode: "IN" },
-      English: { langCode: "en", regionCode: "US" },
-      Spanish: { langCode: "es", regionCode: "ES" },
-      French: { langCode: "fr", regionCode: "FR" },
-      German: { langCode: "de", regionCode: "DE" },
-      Japanese: { langCode: "ja", regionCode: "JP" },
-      Korean: { langCode: "ko", regionCode: "KR" },
-      Chinese: { langCode: "zh", regionCode: "CN" },
-      Arabic: { langCode: "ar", regionCode: "SA" },
-      Russian: { langCode: "ru", regionCode: "RU" },
-      // Add more languages as needed
-    };
+  {
+    Tamil: { langCode: "ta", regionCode: "IN" },
+    Hindi: { langCode: "hi", regionCode: "IN" },
+    English: { langCode: "en", regionCode: "US" },
+    Spanish: { langCode: "es", regionCode: "ES" },
+    French: { langCode: "fr", regionCode: "FR" },
+    German: { langCode: "de", regionCode: "DE" },
+    Japanese: { langCode: "ja", regionCode: "JP" },
+    Korean: { langCode: "ko", regionCode: "KR" },
+    Chinese: { langCode: "zh", regionCode: "CN" },
+    Arabic: { langCode: "ar", regionCode: "SA" },
+    Russian: { langCode: "ru", regionCode: "RU" },
+    // Add more languages as needed
+  };
 
   const langSettings = languageMap[language] || {
     langCode: "en",
@@ -396,8 +396,7 @@ export async function searchYouTubeVideos(query: string, language: string) {
   });
 
   console.log(
-    `Found ${
-      response.data.items?.length || 0
+    `Found ${response.data.items?.length || 0
     } initial videos for query: "${query}"`
   );
   return response.data.items || [];
@@ -419,8 +418,7 @@ export async function filterVideos(
   });
 
   console.log(
-    `Retrieved detailed information for ${
-      details.data.items?.length || 0
+    `Retrieved detailed information for ${details.data.items?.length || 0
     } videos`
   );
 
@@ -473,8 +471,7 @@ export async function filterVideos(
     .slice(0, Math.min(10, allVideosWithScores.length))
     .forEach((item, index) => {
       console.log(
-        `${index + 1}. Score: ${item.relevanceScore}, Title: "${
-          item.video.snippet?.title
+        `${index + 1}. Score: ${item.relevanceScore}, Title: "${item.video.snippet?.title
         }"`
       );
     });
@@ -514,10 +511,10 @@ export async function filterVideos(
       .forEach((item, index) => {
         console.log(
           `${index + 1}. ` +
-            `Relevance: ${item.relevanceScore}, ` +
-            `Title: "${item.video.snippet?.title}", ` +
-            `Duration: ${item.duration}min, ` +
-            `Published: ${item.publishedAt.toLocaleDateString()}`
+          `Relevance: ${item.relevanceScore}, ` +
+          `Title: "${item.video.snippet?.title}", ` +
+          `Duration: ${item.duration}min, ` +
+          `Published: ${item.publishedAt.toLocaleDateString()}`
         );
       });
 
@@ -543,10 +540,10 @@ export async function filterVideos(
       .forEach((item, index) => {
         console.log(
           `${index + 1}. ` +
-            `Relevance: ${item.relevanceScore}, ` +
-            `Title: "${item.video.snippet?.title}", ` +
-            `Duration: ${item.duration}min, ` +
-            ` Recent: ${item.isRecent}`
+          `Relevance: ${item.relevanceScore}, ` +
+          `Title: "${item.video.snippet?.title}", ` +
+          `Duration: ${item.duration}min, ` +
+          ` Recent: ${item.isRecent}`
         );
       });
 
@@ -570,10 +567,10 @@ export async function filterVideos(
       .forEach((item, index) => {
         console.log(
           `${index + 1}. ` +
-            `Relevance: ${item.relevanceScore}, ` +
-            `Title: "${item.video.snippet?.title}", ` +
-            `Duration: ${item.duration}min, ` +
-            `Language match: ${item.isLanguageMatch}`
+          `Relevance: ${item.relevanceScore}, ` +
+          `Title: "${item.video.snippet?.title}", ` +
+          `Duration: ${item.duration}min, ` +
+          `Language match: ${item.isLanguageMatch}`
         );
       });
 
@@ -597,9 +594,9 @@ export async function filterVideos(
     .forEach((item, index) => {
       console.log(
         `${index + 1}. ` +
-          `Relevance: ${item.relevanceScore}, ` +
-          `Title: "${item.video.snippet?.title}", ` +
-          `Duration: ${item.duration}min(below minimum requirement)`
+        `Relevance: ${item.relevanceScore}, ` +
+        `Title: "${item.video.snippet?.title}", ` +
+        `Duration: ${item.duration}min(below minimum requirement)`
       );
     });
 
@@ -732,8 +729,8 @@ export function formatVideoData(video: any) {
       ageInDays < 30
         ? `${ageInDays} days ago`
         : ageInDays < 365
-        ? `${Math.floor(ageInDays / 30)} months ago`
-        : `${Math.floor(ageInDays / 365)} years ago`;
+          ? `${Math.floor(ageInDays / 30)} months ago`
+          : `${Math.floor(ageInDays / 365)} years ago`;
 
     return {
       title: video.snippet.title,

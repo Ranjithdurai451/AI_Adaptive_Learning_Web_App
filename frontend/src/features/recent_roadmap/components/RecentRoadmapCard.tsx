@@ -1,18 +1,9 @@
-import { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from '@/components/ui/card';
+
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import {
   Trash2,
   Clock,
   MoreHorizontal,
-  Star,
-  Code,
   Share2,
   BookOpen,
   BarChart2,
@@ -41,9 +32,7 @@ interface RoadmapCardProps {
 }
 
 export function RoadmapCard({ roadmap, onRemove }: RoadmapCardProps) {
-  //   const [isHovered, setIsHovered] = useState(false);
 
-  // Format the timestamp to a relative time (e.g., "2 hours ago")
 
   // Get color based on progress
   const getProgressColor = (progress: number) => {
@@ -67,8 +56,6 @@ export function RoadmapCard({ roadmap, onRemove }: RoadmapCardProps) {
   return (
     <div
       className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
-      //   onMouseEnter={() => setIsHovered(true)}
-      //   onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex-1 min-w-0">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">

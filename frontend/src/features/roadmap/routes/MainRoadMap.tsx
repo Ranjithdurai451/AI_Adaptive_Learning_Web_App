@@ -1,4 +1,4 @@
-import { Navigate, useNavigate, useSearchParams } from 'react-router';
+import { Navigate, useSearchParams } from 'react-router';
 import { useEffect, useState } from 'react';
 import { generateRoadmap } from '@/lib/actions';
 import { Roadmap } from '@/lib/types';
@@ -6,7 +6,6 @@ import Loader from '../../../Layouts/Root/components/Loader';
 import RoadmapView from '../components/RoadmapView';
 
 const MainRoadMap = () => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
 

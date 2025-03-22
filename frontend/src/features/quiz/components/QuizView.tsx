@@ -79,7 +79,7 @@ export default function QuizView({
     return (correctCount / Questions.length) * 100;
   };
 
-  const onComplete = (passed: boolean) => {
+  const onComplete = () => {
     navigate(`/roadmap?selectedSkill=${skillName}&score=${calculateScore()}&preferredLanguage=${preferredLanguage}`);
   };
 
@@ -144,7 +144,7 @@ export default function QuizView({
             <Button variant="outline" onClick={onBack}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Skills
             </Button>
-            <Button onClick={() => onComplete(passed)}>
+            <Button onClick={() => onComplete()}>
               Continue to Roadmap
             </Button>
           </CardFooter>

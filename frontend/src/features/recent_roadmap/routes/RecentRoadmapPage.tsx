@@ -5,8 +5,6 @@ import {
   Search,
   SlidersHorizontal,
   ChevronDown,
-  LayoutGrid,
-  List,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -23,51 +21,6 @@ import {
 import { RoadmapCard } from '../components/RecentRoadmapCard';
 import { Link } from 'react-router';
 
-// Sample data for demonstration
-// const sampleRoadmaps: RecentRoadmap[] = [
-//   {
-//     skill: 'React',
-//     score: 85,
-//     title: 'Frontend Developer Path',
-//     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-//     progress: 75,
-//     preferredLanguage: 'TypeScript',
-//   },
-//   {
-//     skill: 'Node.js',
-//     score: 92,
-//     title: 'Backend Development',
-//     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-//     progress: 60,
-//     preferredLanguage: 'JavaScript',
-//   },
-//   {
-//     skill: 'Python',
-//     score: 78,
-//     title: 'Data Science Fundamentals',
-//     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), // 3 days ago
-//     progress: 45,
-//     preferredLanguage: 'Python',
-//   },
-//   {
-//     skill: 'AWS',
-//     score: 88,
-//     title: 'Cloud Architecture',
-//     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(), // 5 days ago
-//     progress: 30,
-//     preferredLanguage: 'YAML',
-//   },
-//   {
-//     skill: 'UI/UX',
-//     score: 95,
-//     title: 'Design Systems',
-//     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(), // 7 days ago
-//     progress: 90,
-//     preferredLanguage: 'Figma',
-//   },
-// ];
-
-type ViewMode = 'grid' | 'list';
 type SortOption = 'recent' | 'progress' | 'score';
 
 export default function RecentRoadmapPage() {
@@ -76,13 +29,10 @@ export default function RecentRoadmapPage() {
   const {
     recentRoadmaps: roadmaps,
     removeRoadmap,
-    clearRoadmaps,
   } = useRecentRoadmapsStore();
-  //   const [roadmaps, setRoadmaps] = useState<RecentRoadmap[]>(sampleRoadmaps);
   const [filteredRoadmaps, setFilteredRoadmaps] =
     useState<RecentRoadmap[]>(roadmaps);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [isMobile, setIsMobile] = useState(false);
 

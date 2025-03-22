@@ -1,6 +1,6 @@
 import axios from "axios";
 const axiosObj = axios.create({
-  baseURL: "http://localhost:8080/api",
+  baseURL: import.meta.env.VITE_BACKEND_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -32,7 +32,7 @@ export async function generateDetailedExplanation(
 ) {
   try {
     const response = await axiosObj.get(
-      `/generate_topic_explanation?topic=${topic}&stepTitle=${stepTitle}`
+      `/generate_topic_explanation?topic=${topic}&stepTitle=${stepTitle}&subtopic=${subtopic}`
     );
     return response.data;
   } catch (error) {

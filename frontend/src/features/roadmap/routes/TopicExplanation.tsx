@@ -7,11 +7,11 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Type, Menu, ChevronRight, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import Loader from "@/Layouts/Root/components/Loader";
 import { generateDetailedExplanationWithVideos } from "@/lib/actions";
 import CodeBlock from "@/components/ui/CodeBlock";
-import { CombinedResponse, LearningResource } from "@/lib/types";
+import { CombinedResponse } from "@/lib/types";
 import { useVideoStore } from "@/lib/store/useVideoStore";
 export const renderTextWithCodeHighlights = (text: string) => {
   return text
@@ -118,7 +118,6 @@ export default function TopicExplanation() {
     const handleScroll = () => {
       if (contentRef.current) {
         const element = contentRef.current;
-        const totalHeight = element.scrollHeight - element.clientHeight;
         const scrollPosition = element.scrollTop;
 
         // Show/hide scroll to top button
@@ -238,7 +237,7 @@ export default function TopicExplanation() {
                               className={cn(
                                 "w-full justify-start text-left pl-8 relative",
                                 activeSection === section.id &&
-                                  "text-primary font-medium"
+                                "text-primary font-medium"
                               )}
                               onClick={() => {
                                 scrollToSection(section.id);
@@ -276,10 +275,10 @@ export default function TopicExplanation() {
                       fontSize === "small"
                         ? "medium"
                         : fontSize === "medium"
-                        ? "large"
-                        : fontSize === "large"
-                        ? "x-large"
-                        : "small"
+                          ? "large"
+                          : fontSize === "large"
+                            ? "x-large"
+                            : "small"
                     )
                   }
                 >
@@ -288,10 +287,10 @@ export default function TopicExplanation() {
                     {fontSize === "small"
                       ? "Small"
                       : fontSize === "medium"
-                      ? "Medium"
-                      : fontSize === "large"
-                      ? "Large"
-                      : "X-Large"}
+                        ? "Medium"
+                        : fontSize === "large"
+                          ? "Large"
+                          : "X-Large"}
                   </span>
                 </Button>
               </div>
@@ -335,7 +334,7 @@ export default function TopicExplanation() {
                           className={cn(
                             "h-4 w-4 absolute right-2 top-1/2 -translate-y-1/2 opacity-0 transition-opacity",
                             activeSection === section.id ||
-                              "group-hover:opacity-100"
+                            "group-hover:opacity-100"
                           )}
                         />
                       </Button>

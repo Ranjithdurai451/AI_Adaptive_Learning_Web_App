@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Link, Outlet, useLocation } from 'react-router';
 import RecentRoadmaps from '../../features/recent_roadmap/components/RecentRoadmaps';
 import YouTubeCard from './components/YoutubeCard';
+import { startServer } from '@/lib/actions';
 
 export default function RootLayout() {
   const { theme, setTheme } = useTheme();
@@ -39,6 +40,9 @@ export default function RootLayout() {
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
+  useEffect(() => {
+    startServer();
+  }, [])
 
   return (
     <>

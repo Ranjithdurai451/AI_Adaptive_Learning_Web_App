@@ -5,6 +5,14 @@ const axiosObj = axios.create({
     "Content-Type": "application/json",
   },
 });
+export async function startServer() {
+  try {
+    const response = await axiosObj.get('');
+    console.log(response.data);
+  } catch (error) {
+    console.log("Error", error);
+  }
+}
 
 export async function generateQuiz(topic: string) {
   try {

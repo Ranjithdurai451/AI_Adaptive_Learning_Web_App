@@ -40,6 +40,14 @@ app.use(cors({
   origin: process.env.FRONTEND_BASE_URL
 }));
 
+
+app.get("/api", () => {
+  return {
+    message: "Welcome to the Adaptive Learning API",
+  };
+})
+
+
 /**
  * API endpoint to generate quiz questions for a given topic
  * Uses Redis cache to store results for performance
@@ -350,6 +358,12 @@ app.get("/api/clear_cache", async () => {
   }
 });
 
+app.get("*", async () => {
+  return {
+    error: "Route not found",
+    message: "Try to access /api endpoints instead",
+  };
+})
 // Start the server
 app.listen(process.env.PORT || 3000, async () => {
   console.log("[Server] Initializing server...");

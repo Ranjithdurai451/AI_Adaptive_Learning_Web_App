@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { RotateCcw, Share2, Trophy, CheckCircle, XCircle } from "lucide-react"
+import { RotateCcw, Trophy, CheckCircle, XCircle } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
@@ -52,25 +52,25 @@ export default function PracticeQuizResults({
     emoji = "📚"
   }
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator
-        .share({
-          title: "My Quiz Results",
-          text: `I scored ${score} out of ${totalQuestions} (${percentage}%) on the Web Dev Quiz!`,
-          url: window.location.href,
-        })
-        .catch((error) => console.log("Error sharing", error))
-    } else {
-      // Fallback for browsers that don't support the Web Share API
-      navigator.clipboard
-        .writeText(`I scored ${score} out of ${totalQuestions} (${percentage}%) on the Web Dev Quiz!`)
-        .then(() => {
-          alert("Result copied to clipboard!")
-        })
-        .catch((error) => console.log("Error copying to clipboard", error))
-    }
-  }
+  // const handleShare = () => {
+  //   if (navigator.share) {
+  //     navigator
+  //       .share({
+  //         title: "My Quiz Results",
+  //         text: `I scored ${score} out of ${totalQuestions} (${percentage}%) on the Web Dev Quiz!`,
+  //         url: window.location.href,
+  //       })
+  //       .catch((error) => console.log("Error sharing", error))
+  //   } else {
+  //     // Fallback for browsers that don't support the Web Share API
+  //     navigator.clipboard
+  //       .writeText(`I scored ${score} out of ${totalQuestions} (${percentage}%) on the Web Dev Quiz!`)
+  //       .then(() => {
+  //         alert("Result copied to clipboard!")
+  //       })
+  //       .catch((error) => console.log("Error copying to clipboard", error))
+  //   }
+  // }
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6">

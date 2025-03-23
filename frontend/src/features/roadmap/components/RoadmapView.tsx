@@ -34,7 +34,6 @@ const RoadmapView = ({
   const roadmapKey = `roadmap-${skill}-${score}-${preferredLanguage}`;
   const completedTopicsKey = `${roadmapKey}-completed`;
   const expandedDaysKey = `${roadmapKey}-expanded`;
-  const roadmapLink = `/roadmap?selectedSkill${skill}&score=${score}&preferredLanguage=${preferredLanguage}`
   // Initialize state from localStorage
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>(
     () => {

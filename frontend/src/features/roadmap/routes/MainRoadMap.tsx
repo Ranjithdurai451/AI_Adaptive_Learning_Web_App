@@ -1,4 +1,4 @@
-import { Navigate, useSearchParams } from 'react-router';
+import { Navigate,  useSearchParams } from 'react-router';
 import { useEffect, useState } from 'react';
 import { generateRoadmap } from '@/lib/actions';
 import { Roadmap } from '@/lib/types';
@@ -42,6 +42,7 @@ const MainRoadMap = () => {
     }
   }, [roadmapData]);
 
+
   return (
     <>
       {isLoading ? (
@@ -49,7 +50,9 @@ const MainRoadMap = () => {
           text={`🚀 Designing your personalized learning roadmap... Get ready to level up! ⏳`}
         />
       ) : (
-        <div className="">
+          <div className="">
+            
+        
           <RoadmapView
             score={score}
             skill={selectedSkill || ''}

@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useRecentRoadmapsStore } from "@/lib/store/recentRoadmapStore";
 import { Roadmap } from "@/lib/types";
 import { toSlug } from "@/lib/utils";
@@ -33,7 +34,7 @@ const RoadmapView = ({
   const roadmapKey = `roadmap-${skill}-${score}-${preferredLanguage}`;
   const completedTopicsKey = `${roadmapKey}-completed`;
   const expandedDaysKey = `${roadmapKey}-expanded`;
-
+  const roadmapLink = `/roadmap?selectedSkill${skill}&score=${score}&preferredLanguage=${preferredLanguage}`
   // Initialize state from localStorage
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>(
     () => {
@@ -170,6 +171,9 @@ const RoadmapView = ({
   const onBack = () => {
     navigate(`/`);
   };
+  const navigateToPracticeQuiz = () => {
+    navigate(`/roadmap/practice-quiz?topic=${skill}&score=${score}&preferredLanguage=${preferredLanguage}`)
+  }
 
   return (
     <>
@@ -186,13 +190,16 @@ const RoadmapView = ({
       <div className="w-full max-w-5xl mx-auto px-3 sm:px-4 ">
         {/* Header with title and badge */}
         <div className="mb-6 mt-4">
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <h1 className="text-xl md:text-2xl font-bold text-primary">
-              {roadmap.title}
-            </h1>
-            <span className="px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
-              FAQ
-            </span>
+          <div className="flex w-full justify-between ">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <h1 className="text-xl md:text-2xl font-bold text-primary">
+                {roadmap.title}
+              </h1>
+              <span className="px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                FAQ
+              </span>
+            </div>
+            <Button onClick={navigateToPracticeQuiz}>  Practice Quiz</Button>
           </div>
           <p className="text-muted-foreground text-sm leading-relaxed">
             {roadmap.description}
@@ -275,11 +282,10 @@ const RoadmapView = ({
                     {item.subTopics.map((topic, index) => (
                       <div
                         key={`topic-${index}`}
-                        className={`group grid grid-cols-12 gap-1 transition-colors duration-200 ${
-                          isTopicCompleted(topic, index)
-                            ? "bg-primary/5"
-                            : "hover:bg-muted/20"
-                        }`}
+                        className={`group grid grid-cols-12 gap-1 transition-colors duration-200 ${isTopicCompleted(topic, index)
+                          ? "bg-primary/5"
+                          : "hover:bg-muted/20"
+                          }`}
                         onClick={(e) => toggleTopicCompletion(topic, index, e)}
                       >
                         {/* Status checkbox */}
@@ -305,11 +311,10 @@ const RoadmapView = ({
 
                         {/* Topic content */}
                         <div
-                          className={`col-span-10 sm:col-span-8 py-3 pr-2 pl-0 sm:px-3 font-medium text-sm ${
-                            isTopicCompleted(topic, index)
-                              ? "line-through opacity-70"
-                              : ""
-                          }`}
+                          className={`col-span-10 sm:col-span-8 py-3 pr-2 pl-0 sm:px-3 font-medium text-sm ${isTopicCompleted(topic, index)
+                            ? "line-through opacity-70"
+                            : ""
+                            }`}
                         >
                           {topic}
 
@@ -331,8 +336,7 @@ const RoadmapView = ({
                               navigate(
                                 `/roadmap/${toSlug(
                                   topic
-                                )}?topic=${skill}&subtopic=${
-                                  item.title
+                                )}?topic=${skill}&subtopic=${item.title
                                 }&score=${score}&preferredLanguage=${preferredLanguage}`
                               );
                             }}

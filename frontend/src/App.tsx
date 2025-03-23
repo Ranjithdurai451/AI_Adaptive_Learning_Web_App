@@ -8,6 +8,7 @@ import Home from './Layouts/Root/components/Home';
 import RoadmapLayout from './features/roadmap/routes/RoadmapLayout';
 import TopicExplanation from './features/roadmap/routes/TopicExplanation';
 import RecentRoadmapPage from './features/recent_roadmap/routes/RecentRoadmapPage';
+import PracticeQuizLayout from './features/practice_quiz/routes/PracticeQuizLayout';
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,10 @@ const router = createBrowserRouter([
             path: '/roadmap/:title',
             element: <TopicExplanation />,
           },
+          {
+            path: '/roadmap/practice-quiz'
+            ,element:<PracticeQuizLayout/>
+          }
         ],
       },
       {

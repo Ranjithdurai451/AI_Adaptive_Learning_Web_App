@@ -6,24 +6,71 @@ const youtube = google.youtube({
   auth: process.env.YOUTUBE_API_KEY,
 });
 // Function to generate quiz
-export async function generateQuiz(topic: string) {
+export async function generateQuiz(
+  topic: string,
+  numberOfQuestions: number,
+  difficultyLevel: string,
+) {
   try {
-    const total_number_of_questions = 1;
-    const prompt = `
-        Generate a JSON quiz for ${topic} with exactly ${total_number_of_questions} questions these structured categories:
-        - Basic Concept (30%)
-        - Code Interpretation (30%)
-        - Debugging (20%)
-        - Scenario-Based (20%)
+    // Create a topics string from the array or use the main topic
 
-         Ensure:
-           - The total number of questions is exactly ${total_number_of_questions}.
-           - Each question has four answer choices: A, B, C, and D.
-           - The correct answer is specified.
-       Format:
+
+    // Adjust category distribution based on difficulty
+    let distribution;
+    if (difficultyLevel === "easy") {
+      distribution = {
+        basicConcept: 50,
+        codeInterpretation: 30,
+        debugging: 10,
+        scenarioBased: 10
+      };
+    } else if (difficultyLevel === "medium") {
+      distribution = {
+        basicConcept: 30,
+        codeInterpretation: 30,
+        debugging: 20,
+        scenarioBased: 20
+      };
+    } else { // hard
+      distribution = {
+        basicConcept: 10,
+        codeInterpretation: 30,
+        debugging: 30,
+        scenarioBased: 30
+      };
+    }
+
+    const prompt = `
+        Generate a JSON quiz for ${topic} with exactly ${numberOfQuestions} questions at ${difficultyLevel} difficulty level.
+        
+        Structure the questions according to these categories:
+        - Basic Concept (${distribution.basicConcept}%)
+        - Code Interpretation (${distribution.codeInterpretation}%)
+        - Debugging (${distribution.debugging}%)
+        - Scenario-Based (${distribution.scenarioBased}%)
+
+        Difficulty level: ${difficultyLevel}
+        ${difficultyLevel === "easy"
+        ? "Focus on fundamental concepts, simple syntax, and basic use cases."
+        : difficultyLevel === "medium"
+          ? "Include moderately complex concepts, practical applications, and common patterns."
+          : "Include advanced concepts, complex scenarios, edge cases, and performance considerations."}
+
+        Ensure:
+          - The total number of questions is exactly ${numberOfQuestions}.
+          - Each question has four answer choices: A, B, C, and D.
+          - The correct answer is specified.
+          - Questions match the specified difficulty level.
+          
+        Format:
         {
           "questions": [
-            { "question": "...", "options": ["all answers must come in multiple values, give with option "], "answer": "coorect answer full string,give with option" }
+            { 
+              "question": "...", 
+              "options": ["A. option1", "B. option2", "C. option3", "D. option4"], 
+              "answer": "A. option1",
+              "category": "Basic Concept|Code Interpretation|Debugging|Scenario-Based"
+            }
           ]
         }`;
 
@@ -36,9 +83,9 @@ export async function generateQuiz(topic: string) {
     // return responseText;
     return JSON.parse(responseText);
   } catch (error) {
-    console.error("Error generating topic explanation:", error);
+    console.error("Error generating quiz:", error);
     return {
-      error: "Failed to generate explanation. Please try again.",
+      error: "Failed to generate quiz. Please try again.",
       details: error,
     };
   }

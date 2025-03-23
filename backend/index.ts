@@ -53,36 +53,39 @@ app.get("/api", () => {
  * Uses Redis cache to store results for performance
  */
 app.get("/api/generate_quiz", async ({ query }) => {
-  console.log("[Quiz API] Received request for topic:", query.topic);
+  console.log("[Quiz API] Received request with params:", query);
   try {
-    const topic = query.topic;
+    const { topic, level = "medium", questions = "10" } = query;
+    const numberOfQuestions = parseInt(questions, 10) || 10; // Default to 10 if parsing fails
+
     if (!topic) {
       console.log("[Quiz API] Error: Missing topic parameter");
       return { error: "Topic is required" };
     }
 
+    // Create a cache key that includes all parameters
+    const cacheKey = `quiz:${topic}:${level}:${numberOfQuestions}`;
+
     // Check if we have a cached response
-    const cacheExists = await redisClient.get(topic);
+    const cacheExists = await redisClient.get(cacheKey);
     if (cacheExists) {
-      console.log("[Quiz API] Cache hit for topic:", topic);
+      console.log("[Quiz API] Cache hit for:", cacheKey);
       return JSON.parse(cacheExists);
     }
-    console.log("[Quiz API] Cache miss for topic:", topic);
+    console.log("[Quiz API] Cache miss for:", cacheKey);
 
-    // Handle prerequisites if they exist
-    const prerequisiteTopics = prerequisites[topic] || [];
-    console.log("[Quiz API] Prerequisites for topic:", prerequisiteTopics);
 
-    // Generate quiz based on prerequisites or the topic itself
-    const quizData =
-      prerequisiteTopics.length > 0
-        ? await generateQuiz(prerequisiteTopics.join(", "))
-        : await generateQuiz(topic);
+    // Generate quiz with the provided parameters
+    const quizData = await generateQuiz(
+      topic,
+      numberOfQuestions,
+      level,
+    );
 
     // Cache successful quiz data
     if (!quizData.error) {
-      console.log("[Quiz API] Caching quiz data for topic:", topic);
-      redisClient.set(topic, JSON.stringify(quizData), { EX: 86400 }); // Cache for 24 hours
+      console.log("[Quiz API] Caching quiz data for:", cacheKey);
+      redisClient.set(cacheKey, JSON.stringify(quizData), { EX: 86400 }); // Cache for 24 hours
     } else {
       console.log("[Quiz API] Error generating quiz:", quizData.error);
     }
@@ -90,7 +93,7 @@ app.get("/api/generate_quiz", async ({ query }) => {
     return quizData;
   } catch (error) {
     console.error("[Quiz API] Unexpected error:", error);
-    return { error: "Error generating quiz" };
+    return { error: "Error generating quiz", details: error };
   }
 });
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -6,14 +6,14 @@ import {
   CardHeader,
   CardTitle,
   CardFooter,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, Sparkles, Check } from "lucide-react";
-import { prerequisites, skills } from "@/lib/data";
-import type { Skill } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Search, Sparkles, Check } from 'lucide-react';
+import { prerequisites, skills } from '@/lib/data';
+import type { Skill } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
+import { motion } from 'framer-motion';
 import {
   Dialog,
   DialogContent,
@@ -22,43 +22,43 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { ScrollableFilterButtons } from "./ScrollableFilterButtons";
-import { useNavigate } from "react-router";
+} from '@/components/ui/select';
+import { ScrollableFilterButtons } from './ScrollableFilterButtons';
+import { useNavigate } from 'react-router';
 
 export default function SkillSelector() {
   const navigate = useNavigate();
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [preferredLanguage, setPreferredLanguage] = useState("English");
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [preferredLanguage, setPreferredLanguage] = useState('English');
+  const [activeFilter, setActiveFilter] = useState('all');
   const [recommendedSkills, setRecommendedSkills] = useState<string[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [tempSelectedSkill, setTempSelectedSkill] = useState<Skill | null>(
     null
   );
   useEffect(() => {
-    setRecommendedSkills(["react", "nodejs", "expressjs", "mongodb"])
-  }, [])
+    setRecommendedSkills(['react', 'nodejs', 'express', 'mongodb', 'python']);
+  }, []);
 
   const filteredSkills = skills.filter((skill: any) => {
     const matchesSearch = skill.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesFilter =
-      activeFilter === "all" ||
-      (activeFilter === "recommended" &&
+      activeFilter === 'all' ||
+      (activeFilter === 'recommended' &&
         recommendedSkills.includes(skill.id)) ||
-      (activeFilter === "beginner" && skill.level === "basic") ||
-      (activeFilter === "intermediate" && skill.level === "intermediate") ||
-      (activeFilter === "advanced" && skill.level === "advanced");
+      (activeFilter === 'beginner' && skill.level === 'basic') ||
+      (activeFilter === 'intermediate' && skill.level === 'intermediate') ||
+      (activeFilter === 'advanced' && skill.level === 'advanced');
     return matchesSearch && matchesFilter;
   });
 
@@ -77,9 +77,13 @@ export default function SkillSelector() {
       : [];
 
     if (prerequisiteTopics.length > 0) {
-      navigate(`/quiz?selectedSkill=${selectedSkill?.id}&preferredLanguage=${preferredLanguage}`);
+      navigate(
+        `/quiz?selectedSkill=${selectedSkill?.id}&preferredLanguage=${preferredLanguage}`
+      );
     } else {
-      navigate(`/roadmap?selectedSkill=${selectedSkill?.id}&score=100&preferredLanguage=${preferredLanguage}`);
+      navigate(
+        `/roadmap?selectedSkill=${selectedSkill?.id}&score=100&preferredLanguage=${preferredLanguage}`
+      );
     }
   };
 
@@ -142,7 +146,7 @@ export default function SkillSelector() {
                   <Input
                     placeholder="Search skills..."
                     className="pl-10 pr-4 py-2 text-sm"
-                    value={selectedSkill ? selectedSkill.name : ""}
+                    value={selectedSkill ? selectedSkill.name : ''}
                     readOnly
                   />
                 </div>
@@ -187,13 +191,15 @@ export default function SkillSelector() {
                           <motion.div key={skill.id} variants={item}>
                             <Button
                               variant="outline"
-                              className={`h-auto py-3 px-3 w-full justify-between group hover:border-primary/50 hover:bg-primary/5  duration-200 text-sm ${recommendedSkills.includes(skill.id)
-                                ? "border-primary/30 bg-primary/5"
-                                : ""
-                                } ${tempSelectedSkill?.id === skill.id
-                                  ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                                  : ""
-                                }`}
+                              className={`h-auto py-3 px-3 w-full justify-between group hover:border-primary/50 hover:bg-primary/5  duration-200 text-sm ${
+                                recommendedSkills.includes(skill.id)
+                                  ? 'border-primary/30 bg-primary/5'
+                                  : ''
+                              } ${
+                                tempSelectedSkill?.id === skill.id
+                                  ? 'border-primary bg-primary/10 ring-2 ring-primary/20'
+                                  : ''
+                              }`}
                               onClick={() => handleSkillSelect(skill)}
                             >
                               <div className="flex flex-col items-start text-left">
@@ -246,11 +252,12 @@ export default function SkillSelector() {
                     size="sm"
                   >
                     {tempSelectedSkill
-                      ? `Select ${tempSelectedSkill.name.length > 10
-                        ? "Skill"
-                        : tempSelectedSkill.name
-                      }`
-                      : "Select a skill"}
+                      ? `Select ${
+                          tempSelectedSkill.name.length > 10
+                            ? 'Skill'
+                            : tempSelectedSkill.name
+                        }`
+                      : 'Select a skill'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -287,7 +294,7 @@ export default function SkillSelector() {
           >
             {selectedSkill
               ? `Continue with ${selectedSkill.name}`
-              : "Select a skill to continue"}
+              : 'Select a skill to continue'}
           </Button>
         </CardFooter>
       </Card>

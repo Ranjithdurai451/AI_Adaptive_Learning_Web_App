@@ -1,20 +1,24 @@
-
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { RotateCcw, Trophy, CheckCircle, XCircle } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Badge } from "@/components/ui/badge"
-import { triggerConfetti } from "@/lib/utils"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RotateCcw, Trophy, CheckCircle, XCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { triggerConfetti } from "@/lib/utils";
 
 interface PracticeQuizResultsProps {
-  score: number
-  totalQuestions: number
-  answers: { question: string; userAnswer: string; correctAnswer: string }[]
-  difficulty: string
-  onReset: () => void
-  onTryAgain: () => void
+  score: number;
+  totalQuestions: number;
+  answers: { question: string; userAnswer: string; correctAnswer: string }[];
+  difficulty: string;
+  onReset: () => void;
+  onTryAgain: () => void;
 }
 
 export default function PracticeQuizResults({
@@ -25,31 +29,31 @@ export default function PracticeQuizResults({
   onReset,
   onTryAgain,
 }: PracticeQuizResultsProps) {
-  const [activeTab, setActiveTab] = useState("summary")
+  const [activeTab, setActiveTab] = useState("summary");
 
   useEffect(() => {
     if (score / totalQuestions >= 0.7) {
-      triggerConfetti()
+      triggerConfetti();
     }
-  }, [score, totalQuestions])
+  }, [score, totalQuestions]);
 
-  const percentage = Math.round((score / totalQuestions) * 100)
+  const percentage = Math.round((score / totalQuestions) * 100);
 
-  let message = ""
-  let emoji = ""
+  let message = "";
+  let emoji = "";
 
   if (percentage >= 90) {
-    message = "Outstanding! You're a web development expert!"
-    emoji = "🏆"
+    message = "Outstanding! You're a web development expert!";
+    emoji = "🏆";
   } else if (percentage >= 70) {
-    message = "Great job! You have solid web development knowledge!"
-    emoji = "🎉"
+    message = "Great job! You have solid web development knowledge!";
+    emoji = "🎉";
   } else if (percentage >= 50) {
-    message = "Good effort! Keep learning and practicing!"
-    emoji = "👍"
+    message = "Good effort! Keep learning and practicing!";
+    emoji = "👍";
   } else {
-    message = "Keep studying! You'll improve with practice."
-    emoji = "📚"
+    message = "Keep studying! You'll improve with practice.";
+    emoji = "📚";
   }
 
   // const handleShare = () => {
@@ -71,6 +75,9 @@ export default function PracticeQuizResults({
   //       .catch((error) => console.log("Error copying to clipboard", error))
   //   }
   // }
+  useEffect(() => {
+    localStorage.removeItem("quizState");
+  }, []);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6">
@@ -80,7 +87,12 @@ export default function PracticeQuizResults({
           <p className="text-muted-foreground">Here's how you did</p>
         </div>
 
-        <Tabs defaultValue="summary" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs
+          defaultValue="summary"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="summary">Summary</TabsTrigger>
             <TabsTrigger value="answers">Your Answers</TabsTrigger>
@@ -94,7 +106,10 @@ export default function PracticeQuizResults({
               <CardContent className="space-y-6">
                 <div className="flex flex-col sm:flex-row items-center gap-6">
                   <div className="relative w-32 h-32 flex items-center justify-center">
-                    <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                    <svg
+                      viewBox="0 0 100 100"
+                      className="w-full h-full -rotate-90"
+                    >
                       <circle
                         cx="50"
                         cy="50"
@@ -128,13 +143,16 @@ export default function PracticeQuizResults({
                     <div className="text-4xl">{emoji}</div>
                     <h2 className="text-xl font-semibold">{message}</h2>
                     <p className="text-muted-foreground">
-                      You scored {score} out of {totalQuestions} questions correctly.
+                      You scored {score} out of {totalQuestions} questions
+                      correctly.
                     </p>
                     <div className="flex items-center justify-center sm:justify-start gap-2 text-sm">
                       <Badge variant="outline" className="capitalize">
                         {difficulty} level
                       </Badge>
-                      <Badge variant="secondary">{totalQuestions} questions</Badge>
+                      <Badge variant="secondary">
+                        {totalQuestions} questions
+                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -161,7 +179,11 @@ export default function PracticeQuizResults({
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
-                  <Button variant="outline" className="flex items-center justify-center gap-2" onClick={onTryAgain}>
+                  <Button
+                    variant="outline"
+                    className="flex items-center justify-center gap-2"
+                    onClick={onTryAgain}
+                  >
                     <RotateCcw className="h-4 w-4" />
                     Try Again
                   </Button>
@@ -173,7 +195,6 @@ export default function PracticeQuizResults({
                     <Trophy className="h-4 w-4" />
                     New Quiz
                   </Button>
-
                 </div>
               </CardContent>
             </Card>
@@ -187,9 +208,13 @@ export default function PracticeQuizResults({
               <CardContent>
                 <Accordion type="single" collapsible className="w-full">
                   {answers.map((answer, index) => {
-                    const isCorrect = answer.userAnswer === answer.correctAnswer
-                    const userAnswerText = answer.userAnswer ? answer.userAnswer.split(". ")[1] : "No answer"
-                    const correctAnswerText = answer.correctAnswer.split(". ")[1]
+                    const isCorrect =
+                      answer.userAnswer === answer.correctAnswer;
+                    const userAnswerText = answer.userAnswer
+                      ? answer.userAnswer.split(". ")[1]
+                      : "No answer";
+                    const correctAnswerText =
+                      answer.correctAnswer.split(". ")[1];
 
                     return (
                       <AccordionItem key={index} value={`item-${index}`}>
@@ -198,7 +223,11 @@ export default function PracticeQuizResults({
                             <div
                               className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${isCorrect ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}
                             >
-                              {isCorrect ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                              {isCorrect ? (
+                                <CheckCircle className="h-4 w-4" />
+                              ) : (
+                                <XCircle className="h-4 w-4" />
+                              )}
                             </div>
                             <span className="text-sm font-medium truncate max-w-[250px] sm:max-w-[350px]">
                               {answer.question}
@@ -208,7 +237,9 @@ export default function PracticeQuizResults({
                         <AccordionContent>
                           <div className="space-y-2 pl-9">
                             <div className="space-y-1">
-                              <div className="text-sm font-medium">Your Answer:</div>
+                              <div className="text-sm font-medium">
+                                Your Answer:
+                              </div>
                               <div
                                 className={`text-sm p-2 rounded ${isCorrect ? "bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400" : "bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400"}`}
                               >
@@ -218,7 +249,9 @@ export default function PracticeQuizResults({
 
                             {!isCorrect && (
                               <div className="space-y-1">
-                                <div className="text-sm font-medium">Correct Answer:</div>
+                                <div className="text-sm font-medium">
+                                  Correct Answer:
+                                </div>
                                 <div className="text-sm p-2 rounded bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400">
                                   {correctAnswerText}
                                 </div>
@@ -227,15 +260,23 @@ export default function PracticeQuizResults({
                           </div>
                         </AccordionContent>
                       </AccordionItem>
-                    )
+                    );
                   })}
                 </Accordion>
 
                 <div className="flex justify-between mt-6">
-                  <Button variant="outline" onClick={() => setActiveTab("summary")} className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveTab("summary")}
+                    className="flex items-center gap-2"
+                  >
                     Back to Summary
                   </Button>
-                  <Button variant="outline" className="flex items-center gap-2" onClick={onReset}>
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2"
+                    onClick={onReset}
+                  >
                     <Trophy className="h-4 w-4" />
                     New Quiz
                   </Button>
@@ -246,6 +287,5 @@ export default function PracticeQuizResults({
         </Tabs>
       </div>
     </div>
-  )
+  );
 }
-

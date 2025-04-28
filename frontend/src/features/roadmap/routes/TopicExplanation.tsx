@@ -13,35 +13,58 @@ import { generateDetailedExplanationWithVideos } from "@/lib/actions";
 import CodeBlock from "@/components/ui/CodeBlock";
 import { CombinedResponse } from "@/lib/types";
 import { useVideoStore } from "@/lib/store/useVideoStore";
-export const renderTextWithCodeHighlights = (text: string) => {
-  return text
-    .split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*[^*\s]\*|`[^`]+`|\*)/g) // Ensure correct splitting
-    .map((part, index) => {
-      if (part === "*") {
-        return <br key={index} />; // Insert a new line
-      }
-      if (/^\*\*(.+)\*\*$/.test(part)) {
-        return (
-          <strong className="  underline underline-offset-2" key={index}>
-            {part.slice(2, -2)}
-          </strong>
-        );
-      }
-      if (/^\*(.+)\*$/.test(part)) {
-        return <em key={index}>{part.slice(1, -1)}</em>;
-      }
-      if (/^`(.+)`$/.test(part)) {
-        return (
-          <code
-            key={index}
-            className=" mx-1 bg-gray-200 dark:bg-gray-900 px-2 py-0.5 rounded"
-          >
-            {part.slice(1, -1)}
-          </code>
-        );
-      }
-      return part;
-    });
+export const renderTextWithCodeHighlights = (
+  text: string,
+): React.ReactNode[] => {
+  if (!text || typeof text !== "string") return [];
+
+  // Enhanced regex pattern handling multiple formatting options
+  // Handles nested formatting more accurately
+  const segments = text
+    .split(/((?:\*\*[^*]+\*\*)|(?:\*[^*\s][^*]*[^*\s]\*)|(?:`[^`]+`)|(?:\n))/g)
+    .filter(Boolean);
+
+  return segments.map((segment, index) => {
+    // Handle newlines for better whitespace preservation
+    if (segment === "\n") {
+      return <br key={`br-${index}`} />;
+    }
+
+    // Bold text with **text**
+    const boldMatch = segment.match(/^\*\*(.+?)\*\*$/);
+    if (boldMatch) {
+      return (
+        <strong
+          key={`bold-${index}`}
+          className="font-semibold underline underline-offset-2 decoration-1"
+        >
+          {boldMatch[1]}
+        </strong>
+      );
+    }
+
+    // Italic text with *text*
+    const italicMatch = segment.match(/^\*(.+?)\*$/);
+    if (italicMatch) {
+      return <em key={`italic-${index}`}>{italicMatch[1]}</em>;
+    }
+
+    // Inline code with `code`
+    const codeMatch = segment.match(/^`(.+?)`$/);
+    if (codeMatch) {
+      return (
+        <code
+          key={`code-${index}`}
+          className="mx-1 bg-gray-200 dark:bg-gray-800 px-2 py-0.5 rounded font-mono text-sm"
+        >
+          {codeMatch[1]}
+        </code>
+      );
+    }
+
+    // Regular text - Apply word wrapping for better readability
+    return <span key={`text-${index}`}>{segment}</span>;
+  });
 };
 export default function TopicExplanation() {
   const navigate = useNavigate();
@@ -60,20 +83,20 @@ export default function TopicExplanation() {
     // console.log('Fetching topic explanation for:', topic, title);
     if (
       !localStorage.getItem(
-        `${topic}-${subtopic}-${title}-${preferredLanguage}`
+        `${topic}-${subtopic}-${title}-${preferredLanguage}`,
       )
     ) {
       generateDetailedExplanationWithVideos(
         topic,
         subtopic,
         title,
-        preferredLanguage
+        preferredLanguage,
       ).then((response) => {
         console.log(response);
         if (!response.error)
           localStorage.setItem(
             `${topic}-${title}-${preferredLanguage}`,
-            JSON.stringify(response)
+            JSON.stringify(response),
           );
         setTopicData(response);
       });
@@ -81,9 +104,9 @@ export default function TopicExplanation() {
       setTopicData(
         JSON.parse(
           localStorage.getItem(
-            `${topic}-${subtopic}-${title}-${preferredLanguage}`
-          ) || ""
-        )
+            `${topic}-${subtopic}-${title}-${preferredLanguage}`,
+          ) || "",
+        ),
       );
     }
   }, []);
@@ -184,10 +207,10 @@ export default function TopicExplanation() {
 
   const onBack = () => {
     localStorage.removeItem(
-      `${topic}-${subtopic}-${title}-${preferredLanguage}`
+      `${topic}-${subtopic}-${title}-${preferredLanguage}`,
     );
     navigate(
-      `/roadmap?selectedSkill=${topic}&score=${score}&preferredLanguage=${preferredLanguage}`
+      `/roadmap?selectedSkill=${topic}&score=${score}&preferredLanguage=${preferredLanguage}`,
     );
   };
 
@@ -237,7 +260,7 @@ export default function TopicExplanation() {
                               className={cn(
                                 "w-full justify-start text-left pl-8 relative",
                                 activeSection === section.id &&
-                                "text-primary font-medium"
+                                  "text-primary font-medium",
                               )}
                               onClick={() => {
                                 scrollToSection(section.id);
@@ -245,7 +268,7 @@ export default function TopicExplanation() {
                                 document
                                   .querySelector("[data-radix-collection-item]")
                                   ?.dispatchEvent(
-                                    new MouseEvent("click", { bubbles: true })
+                                    new MouseEvent("click", { bubbles: true }),
                                   );
                               }}
                             >
@@ -278,7 +301,7 @@ export default function TopicExplanation() {
                           ? "large"
                           : fontSize === "large"
                             ? "x-large"
-                            : "small"
+                            : "small",
                     )
                   }
                 >
@@ -319,7 +342,7 @@ export default function TopicExplanation() {
                           "w-full justify-start text-left  relative hover:bg-muted/50",
                           activeSection === section.id
                             ? "text-primary font-medium"
-                            : "text-foreground/80"
+                            : "text-foreground/80",
                         )}
                         onClick={() => scrollToSection(section.id)}
                       >
@@ -334,7 +357,7 @@ export default function TopicExplanation() {
                           className={cn(
                             "h-4 w-4 absolute right-2 top-1/2 -translate-y-1/2 opacity-0 transition-opacity",
                             activeSection === section.id ||
-                            "group-hover:opacity-100"
+                              "group-hover:opacity-100",
                           )}
                         />
                       </Button>
@@ -358,13 +381,15 @@ export default function TopicExplanation() {
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <Badge>
                         {renderTextWithCodeHighlights(
-                          topicData?.difficulty || ""
+                          topicData?.difficulty || "",
                         )}
                       </Badge>
                     </div>
 
                     <h1 className="mb-3 text-2xl font-bold tracking-tight sm:text-3xl">
-                      {renderTextWithCodeHighlights(topicData?.title || "")}{" "}
+                      {renderTextWithCodeHighlights(
+                        topicData?.title || "",
+                      )}{" "}
                     </h1>
                     <p className="text-muted-foreground">
                       {topicData?.description}

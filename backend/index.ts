@@ -1,4 +1,3 @@
-import { prerequisites } from "./lib/data";
 import {
   fetchWithRetry,
   filterVideos,
@@ -11,7 +10,6 @@ import {
 import { createClient } from "redis";
 import { Elysia } from "elysia";
 import cors from "@elysiajs/cors";
-import pLimit from "p-limit";
 import type { CombinedResponse, LearningResource, Resource } from "./lib/types";
 
 /**
@@ -29,6 +27,7 @@ redisClient.on("connect", () => console.log("[Redis] Connected successfully"));
  * Initialize Elysia server with extended idle timeout
  * to handle longer-running requests
  */
+
 const app = new Elysia({
   serve: {
     idleTimeout: 200,
@@ -36,17 +35,17 @@ const app = new Elysia({
 });
 
 // Apply CORS middleware to allow cross-origin requests
-app.use(cors({
-  origin: process.env.FRONTEND_BASE_URL
-}));
-
+app.use(
+  cors({
+    origin: process.env.FRONTEND_BASE_URL,
+  }),
+);
 
 app.get("/api", () => {
   return {
     message: "Welcome to the Adaptive Learning API",
   };
-})
-
+});
 
 /**
  * API endpoint to generate quiz questions for a given topic
@@ -55,8 +54,8 @@ app.get("/api", () => {
 app.get("/api/generate_quiz", async ({ query }) => {
   console.log("[Quiz API] Received request with params:", query);
   try {
-    const { topic, level = "medium", questions = "10" } = query;
-    const numberOfQuestions = parseInt(questions, 10) || 10; // Default to 10 if parsing fails
+    const { topic, level = "medium", questions } = query;
+    const numberOfQuestions = parseInt(questions) || 3; // Default to 10 if parsing fails
 
     if (!topic) {
       console.log("[Quiz API] Error: Missing topic parameter");
@@ -74,13 +73,8 @@ app.get("/api/generate_quiz", async ({ query }) => {
     }
     console.log("[Quiz API] Cache miss for:", cacheKey);
 
-
     // Generate quiz with the provided parameters
-    const quizData = await generateQuiz(
-      topic,
-      numberOfQuestions,
-      level,
-    );
+    const quizData = await generateQuiz(topic, numberOfQuestions, level);
 
     // Cache successful quiz data
     if (!quizData.error) {
@@ -106,7 +100,7 @@ app.get("/api/generate_roadmap", async ({ query }) => {
     "[Roadmap API] Received request for topic:",
     query.topic,
     "with score:",
-    query.score
+    query.score,
   );
   try {
     const topic = query.topic;
@@ -131,7 +125,7 @@ app.get("/api/generate_roadmap", async ({ query }) => {
       "[Roadmap API] Generating roadmap for score:",
       score,
       "and topic:",
-      topic
+      topic,
     );
     const roadmapData = await generateRoadmap(score, topic);
 
@@ -163,7 +157,7 @@ app.get("/api/generate_topic_explanation", async ({ query }) => {
     "subtopic :",
     query.subtopic,
     "step:",
-    query.stepTitle
+    query.stepTitle,
   );
   try {
     const { topic, subtopic, stepTitle } = query;
@@ -173,7 +167,7 @@ app.get("/api/generate_topic_explanation", async ({ query }) => {
     }
 
     // Create a unique cache key combining topic and step
-    const cacheKey = `${topic}-${stepTitle}`;
+    const cacheKey = `${topic}-${subtopic}-${stepTitle}`;
     const cacheExists = await redisClient.get(cacheKey);
     if (cacheExists) {
       console.log("[Explanation API] Cache hit for key:", cacheKey);
@@ -186,7 +180,7 @@ app.get("/api/generate_topic_explanation", async ({ query }) => {
       "[Explanation API] Fetching explanation with retry for topic:",
       topic,
       "step:",
-      stepTitle
+      stepTitle,
     );
     const explanation = await fetchWithRetry(topic, subtopic, stepTitle);
 
@@ -199,7 +193,7 @@ app.get("/api/generate_topic_explanation", async ({ query }) => {
     } else {
       console.log(
         "[Explanation API] Error generating explanation:",
-        explanation?.error
+        explanation?.error,
       );
     }
 
@@ -226,25 +220,25 @@ app.get("/api/generate_topic_explanation_with_videos", async ({ query }) => {
       "step:",
       stepTitle,
       "language:",
-      language
+      language,
     );
 
     let explanation: LearningResource | null = null;
     if (!topic || !stepTitle || !subtopic) {
       console.log(
-        "[Explanation+Videos API] Error: Missing required parameters"
+        "[Explanation+Videos API] Error: Missing required parameters",
       );
       return { error: "Topic and Step Title are required." };
     }
 
     // Create a unique cache key combining topic, step, and language
-    const cacheKey = `${topic}-${stepTitle}-${language}`;
+    const cacheKey = `${topic}-${subtopic}-${stepTitle}-${language}`;
     const cacheExists = await redisClient.get(cacheKey);
 
     if (cacheExists) {
       console.log("[Explanation+Videos API] Cache hit for key:", cacheKey);
       const combined_cache_response = JSON.parse(
-        cacheExists
+        cacheExists,
       ) as CombinedResponse;
       return combined_cache_response;
     } else {
@@ -257,7 +251,7 @@ app.get("/api/generate_topic_explanation_with_videos", async ({ query }) => {
       if (!explanation || "error" in explanation) {
         console.log(
           "[Explanation+Videos API] Failed to generate explanation:",
-          explanation?.error
+          explanation?.error,
         );
         return explanation || { error: "Failed to generate topic explanation" };
       }
@@ -272,54 +266,54 @@ app.get("/api/generate_topic_explanation_with_videos", async ({ query }) => {
 
       console.log(
         "[Explanation+Videos API] Generating search query based on resources:",
-        combinedTitles
+        combinedTitles,
       );
 
       // Generate optimized search query for YouTube
       const combinedSearchQuery = await generateSearchQuery(
         topic,
         combinedTitles,
-        language
+        language,
       );
 
       console.log(
         "[Explanation+Videos API] Searching YouTube with query:",
-        combinedSearchQuery
+        combinedSearchQuery,
       );
       const videos = await searchYouTubeVideos(combinedSearchQuery, language);
       console.log(
-        `[Explanation+Videos API] Found ${videos.length} initial videos from YouTube search`
+        `[Explanation+Videos API] Found ${videos.length} initial videos from YouTube search`,
       );
 
       // First try to filter videos with standard recency (24 months)
       console.log(
-        "[Explanation+Videos API] Filtering videos with 24 month recency requirement"
+        "[Explanation+Videos API] Filtering videos with 24 month recency requirement",
       );
       let filteredVideos = await filterVideos(
         videos,
         combinedSearchQuery,
         language,
         5,
-        24
+        24,
       );
 
       // If no suitable videos found, try with extended timeframe (48 months)
       if (!filteredVideos || filteredVideos.length === 0) {
         console.log(
-          "[Explanation+Videos API] No recent videos found within 24 months, extending to 48 months"
+          "[Explanation+Videos API] No recent videos found within 24 months, extending to 48 months",
         );
         filteredVideos = await filterVideos(
           videos,
           combinedSearchQuery,
           language,
           5,
-          48
+          48,
         );
       }
 
       // Format the videos that were filtered
       console.log(
-        `[Explanation+Videos API] Found ${filteredVideos.length} filtered videos for response`
+        `[Explanation+Videos API] Found ${filteredVideos.length} filtered videos for response`,
       );
       const formattedVideos = filteredVideos.map(formatVideoData);
 
@@ -366,14 +360,14 @@ app.get("*", async () => {
     error: "Route not found",
     message: "Try to access /api endpoints instead",
   };
-})
+});
 // Start the server
 app.listen(process.env.PORT || 3000, async () => {
   console.log("[Server] Initializing server...");
   try {
     await redisClient.connect(); // Ensure Redis is connected before using it
     console.log(
-      `[Server] Server running at http://localhost:${process.env.PORT || 3000}`
+      `[Server] Server running at http://localhost:${process.env.PORT || 3000}`,
     );
     console.log("[Server] Redis client connected successfully");
   } catch (error) {

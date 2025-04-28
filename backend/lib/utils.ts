@@ -14,7 +14,6 @@ export async function generateQuiz(
   try {
     // Create a topics string from the array or use the main topic
 
-
     // Adjust category distribution based on difficulty
     let distribution;
     if (difficultyLevel === "easy") {
@@ -22,21 +21,22 @@ export async function generateQuiz(
         basicConcept: 50,
         codeInterpretation: 30,
         debugging: 10,
-        scenarioBased: 10
+        scenarioBased: 10,
       };
     } else if (difficultyLevel === "medium") {
       distribution = {
         basicConcept: 30,
         codeInterpretation: 30,
         debugging: 20,
-        scenarioBased: 20
+        scenarioBased: 20,
       };
-    } else { // hard
+    } else {
+      // hard
       distribution = {
         basicConcept: 10,
         codeInterpretation: 30,
         debugging: 30,
-        scenarioBased: 30
+        scenarioBased: 30,
       };
     }
 
@@ -50,18 +50,21 @@ export async function generateQuiz(
         - Scenario-Based (${distribution.scenarioBased}%)
 
         Difficulty level: ${difficultyLevel}
-        ${difficultyLevel === "easy"
-        ? "Focus on fundamental concepts, simple syntax, and basic use cases."
-        : difficultyLevel === "medium"
-          ? "Include moderately complex concepts, practical applications, and common patterns."
-          : "Include advanced concepts, complex scenarios, edge cases, and performance considerations."}
+        ${
+          difficultyLevel === "easy"
+            ? "Focus on fundamental concepts, simple syntax, and basic use cases."
+            : difficultyLevel === "medium"
+              ? "Include moderately complex concepts, practical applications, and common patterns."
+              : "Include advanced concepts, complex scenarios, edge cases, and performance considerations."
+        }
 
         Ensure:
           - The total number of questions is exactly ${numberOfQuestions}.
           - Each question has four answer choices: A, B, C, and D.
           - The correct answer is specified.
           - Questions match the specified difficulty level.
-          
+          - Questions can be maximum   of 60 words.
+          - Answers must be  maximum of 40 words
         Format:
         {
           "questions": [
@@ -113,18 +116,19 @@ Format:
     "description": "Comprehensive learning path for ${topic} including prerequisites and progression from fundamentals to advanced concepts.",
     "prerequisites": ${JSON.stringify(prerequisites[topic]) || []},
     "steps": [
-      ${prerequisites[topic]
-        ? prerequisites[topic]
-          .map(
-            (prereq) => `{
+      ${
+        prerequisites[topic]
+          ? prerequisites[topic]
+              .map(
+                (prereq) => `{
         "skillId": "${prereq}",
         "title": "Essential ${prereq} Fundamentals",
         "description": "Core ${prereq} concepts required before learning ${topic}",
         "subTopics": ["List 5-8 key subtopics for ${prereq}"]
-      }`
-          )
-          .join(",\n") + ","
-        : ""
+      }`,
+              )
+              .join(",\n") + ","
+          : ""
       }
       {
         "skillId": "${topic}-basics",
@@ -250,7 +254,7 @@ Format:
 export async function generateTopicExplanation(
   topic: string,
   subtopic: string,
-  stepTitle: string
+  stepTitle: string,
 ) {
   // Create a prompt that avoids template literal interpolation in the output
   // and replaces variables directly to prevent escape character issues
@@ -379,7 +383,7 @@ export async function generateTopicExplanation(
 export async function generateSearchQuery(
   topic: string,
   resourcesTitles: string,
-  language: string
+  language: string,
 ) {
   const prompt = `I have these resource titles related ${topic} to a programming concept:
 "${resourcesTitles}"
@@ -410,20 +414,20 @@ Example output for English: "Java Reflection tutorial"`;
 export async function searchYouTubeVideos(query: string, language: string) {
   // Map common languages to their codes
   const languageMap: Record<string, { langCode: string; regionCode: string }> =
-  {
-    Tamil: { langCode: "ta", regionCode: "IN" },
-    Hindi: { langCode: "hi", regionCode: "IN" },
-    English: { langCode: "en", regionCode: "US" },
-    Spanish: { langCode: "es", regionCode: "ES" },
-    French: { langCode: "fr", regionCode: "FR" },
-    German: { langCode: "de", regionCode: "DE" },
-    Japanese: { langCode: "ja", regionCode: "JP" },
-    Korean: { langCode: "ko", regionCode: "KR" },
-    Chinese: { langCode: "zh", regionCode: "CN" },
-    Arabic: { langCode: "ar", regionCode: "SA" },
-    Russian: { langCode: "ru", regionCode: "RU" },
-    // Add more languages as needed
-  };
+    {
+      Tamil: { langCode: "ta", regionCode: "IN" },
+      Hindi: { langCode: "hi", regionCode: "IN" },
+      English: { langCode: "en", regionCode: "US" },
+      Spanish: { langCode: "es", regionCode: "ES" },
+      French: { langCode: "fr", regionCode: "FR" },
+      German: { langCode: "de", regionCode: "DE" },
+      Japanese: { langCode: "ja", regionCode: "JP" },
+      Korean: { langCode: "ko", regionCode: "KR" },
+      Chinese: { langCode: "zh", regionCode: "CN" },
+      Arabic: { langCode: "ar", regionCode: "SA" },
+      Russian: { langCode: "ru", regionCode: "RU" },
+      // Add more languages as needed
+    };
 
   const langSettings = languageMap[language] || {
     langCode: "en",
@@ -443,8 +447,9 @@ export async function searchYouTubeVideos(query: string, language: string) {
   });
 
   console.log(
-    `Found ${response.data.items?.length || 0
-    } initial videos for query: "${query}"`
+    `Found ${
+      response.data.items?.length || 0
+    } initial videos for query: "${query}"`,
   );
   return response.data.items || [];
 }
@@ -454,7 +459,7 @@ export async function filterVideos(
   searchQuery: string,
   preferredLanguage: string = "en",
   minDurationMinutes: number = 5,
-  maxAgeMonths: number = 36
+  maxAgeMonths: number = 36,
 ) {
   if (!videos.length) return [];
 
@@ -465,8 +470,9 @@ export async function filterVideos(
   });
 
   console.log(
-    `Retrieved detailed information for ${details.data.items?.length || 0
-    } videos`
+    `Retrieved detailed information for ${
+      details.data.items?.length || 0
+    } videos`,
   );
 
   // Calculate relevance scores for all videos
@@ -518,8 +524,9 @@ export async function filterVideos(
     .slice(0, Math.min(10, allVideosWithScores.length))
     .forEach((item, index) => {
       console.log(
-        `${index + 1}. Score: ${item.relevanceScore}, Title: "${item.video.snippet?.title
-        }"`
+        `${index + 1}. Score: ${item.relevanceScore}, Title: "${
+          item.video.snippet?.title
+        }"`,
       );
     });
 
@@ -558,10 +565,10 @@ export async function filterVideos(
       .forEach((item, index) => {
         console.log(
           `${index + 1}. ` +
-          `Relevance: ${item.relevanceScore}, ` +
-          `Title: "${item.video.snippet?.title}", ` +
-          `Duration: ${item.duration}min, ` +
-          `Published: ${item.publishedAt.toLocaleDateString()}`
+            `Relevance: ${item.relevanceScore}, ` +
+            `Title: "${item.video.snippet?.title}", ` +
+            `Duration: ${item.duration}min, ` +
+            `Published: ${item.publishedAt.toLocaleDateString()}`,
         );
       });
 
@@ -572,7 +579,7 @@ export async function filterVideos(
 
   // First fallback: Try with language and minimum duration, but relax recency
   const languageDurationVideos = allVideosWithScores.filter(
-    (item) => item.isLanguageMatch && item.meetsDuration
+    (item) => item.isLanguageMatch && item.meetsDuration,
   );
 
   if (languageDurationVideos.length > 0) {
@@ -580,17 +587,17 @@ export async function filterVideos(
     languageDurationVideos.sort((a, b) => b.relevanceScore - a.relevanceScore);
 
     console.log(
-      "Fallback 1: Language and duration matched videos sorted by relevance:"
+      "Fallback 1: Language and duration matched videos sorted by relevance:",
     );
     languageDurationVideos
       .slice(0, Math.min(3, languageDurationVideos.length))
       .forEach((item, index) => {
         console.log(
           `${index + 1}. ` +
-          `Relevance: ${item.relevanceScore}, ` +
-          `Title: "${item.video.snippet?.title}", ` +
-          `Duration: ${item.duration}min, ` +
-          ` Recent: ${item.isRecent}`
+            `Relevance: ${item.relevanceScore}, ` +
+            `Title: "${item.video.snippet?.title}", ` +
+            `Duration: ${item.duration}min, ` +
+            ` Recent: ${item.isRecent}`,
         );
       });
 
@@ -601,7 +608,7 @@ export async function filterVideos(
 
   // Second fallback: Try with just duration requirement
   const durationVideos = allVideosWithScores.filter(
-    (item) => item.meetsDuration
+    (item) => item.meetsDuration,
   );
 
   if (durationVideos.length > 0) {
@@ -614,10 +621,10 @@ export async function filterVideos(
       .forEach((item, index) => {
         console.log(
           `${index + 1}. ` +
-          `Relevance: ${item.relevanceScore}, ` +
-          `Title: "${item.video.snippet?.title}", ` +
-          `Duration: ${item.duration}min, ` +
-          `Language match: ${item.isLanguageMatch}`
+            `Relevance: ${item.relevanceScore}, ` +
+            `Title: "${item.video.snippet?.title}", ` +
+            `Duration: ${item.duration}min, ` +
+            `Language match: ${item.isLanguageMatch}`,
         );
       });
 
@@ -629,21 +636,21 @@ export async function filterVideos(
   // Final fallback: Just return top 3 most relevant videos regardless of other criteria
   // This should only happen if no videos meet the duration requirement
   console.log(
-    "Final fallback: Most relevant videos regardless of criteria (no videos meet duration requirement)"
+    "Final fallback: Most relevant videos regardless of criteria (no videos meet duration requirement)",
   );
   allVideosWithScores.sort((a, b) => b.relevanceScore - a.relevanceScore);
 
   console.log(
-    "Warning: Returning videos that don't meet minimum duration requirement as a last resort"
+    "Warning: Returning videos that don't meet minimum duration requirement as a last resort",
   );
   allVideosWithScores
     .slice(0, Math.min(3, allVideosWithScores.length))
     .forEach((item, index) => {
       console.log(
         `${index + 1}. ` +
-        `Relevance: ${item.relevanceScore}, ` +
-        `Title: "${item.video.snippet?.title}", ` +
-        `Duration: ${item.duration}min(below minimum requirement)`
+          `Relevance: ${item.relevanceScore}, ` +
+          `Title: "${item.video.snippet?.title}", ` +
+          `Duration: ${item.duration}min(below minimum requirement)`,
       );
     });
 
@@ -735,7 +742,7 @@ function checkIfLanguageVideo(video: any, language: string): boolean {
       title.includes(keyword) ||
       description.includes(keyword) ||
       channelTitle.includes(keyword) ||
-      tags.some((tag: string) => tag.includes(keyword))
+      tags.some((tag: string) => tag.includes(keyword)),
   );
 
   // Check if the video has the preferred language in its default language setting
@@ -754,7 +761,7 @@ export function formatVideoData(video: any) {
 
   try {
     const durationText = formatDuration(
-      video.contentDetails?.duration || "PT0S"
+      video.contentDetails?.duration || "PT0S",
     );
 
     // Calculate like to view ratio percentage
@@ -770,7 +777,7 @@ export function formatVideoData(video: any) {
     const publishDate = new Date(video.snippet.publishedAt);
     const now = new Date();
     const ageInDays = Math.floor(
-      (now.getTime() - publishDate.getTime()) / (1000 * 60 * 60 * 24)
+      (now.getTime() - publishDate.getTime()) / (1000 * 60 * 60 * 24),
     );
     const ageText =
       ageInDays < 30
@@ -843,7 +850,7 @@ export const fetchWithRetry = async (
   topic: string,
   subtopic: string,
   title: string,
-  retries = 3
+  retries = 3,
 ): Promise<any> => {
   let attempt = 0;
   while (attempt < retries) {
@@ -851,7 +858,7 @@ export const fetchWithRetry = async (
     if (!explanation.error) return explanation;
     console.error(
       `Retry ${attempt + 1} failed for: ${title},
-  explanation.error`
+  explanation.error`,
     );
     attempt++;
     // await Bun.sleep(2000); // Wait 2s before retry

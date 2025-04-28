@@ -1,18 +1,18 @@
-import { createBrowserRouter, RouterProvider } from 'react-router';
-import RootLayout from './Layouts/Root/RootLayout';
-import MainQuiz from './features/quiz/routes/MainQuiz';
-import MainRoadMap from './features/roadmap/routes/MainRoadMap';
-import SkillSelector from './Layouts/Root/components/SkillSelector';
-import { ThemeProvider } from './components/ui/ThemeProvider';
-import Home from './Layouts/Root/components/Home';
-import RoadmapLayout from './features/roadmap/routes/RoadmapLayout';
-import TopicExplanation from './features/roadmap/routes/TopicExplanation';
-import RecentRoadmapPage from './features/recent_roadmap/routes/RecentRoadmapPage';
-import PracticeQuizLayout from './features/practice_quiz/routes/PracticeQuizLayout';
+import { createBrowserRouter, RouterProvider } from "react-router";
+import RootLayout from "./Layouts/Root/RootLayout";
+import MainQuiz from "./features/quiz/routes/MainQuiz";
+import MainRoadMap from "./features/roadmap/routes/MainRoadMap";
+import { ThemeProvider } from "./components/ui/ThemeProvider";
+import RoadmapLayout from "./features/roadmap/routes/RoadmapLayout";
+import TopicExplanation from "./features/roadmap/routes/TopicExplanation";
+import RecentRoadmapPage from "./features/recent_roadmap/routes/RecentRoadmapPage";
+import PracticeQuizLayout from "./features/practice_quiz/routes/PracticeQuizLayout";
+import Home from "./Layouts/Root/components/Home";
+import SkillSelector from "./Layouts/Root/components/SkillSelector";
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <RootLayout />,
     children: [
       {
@@ -20,15 +20,15 @@ const router = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: '/skill-selector',
+        path: "/skill-selector",
         element: <SkillSelector />,
       },
       {
-        path: '/quiz',
+        path: "/quiz",
         element: <MainQuiz />,
       },
       {
-        path: '/roadmap',
+        path: "/roadmap",
         element: <RoadmapLayout />,
         children: [
           {
@@ -36,17 +36,17 @@ const router = createBrowserRouter([
             element: <MainRoadMap />,
           },
           {
-            path: '/roadmap/:title',
+            path: "/roadmap/:title",
             element: <TopicExplanation />,
           },
           {
-            path: '/roadmap/practice-quiz'
-            ,element:<PracticeQuizLayout/>
-          }
+            path: "/roadmap/practice-quiz",
+            element: <PracticeQuizLayout />,
+          },
         ],
       },
       {
-        path: '/roadmaps',
+        path: "/roadmaps",
         element: <RecentRoadmapPage />,
       },
     ],

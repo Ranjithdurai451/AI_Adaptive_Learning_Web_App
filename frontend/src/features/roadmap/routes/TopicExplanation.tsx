@@ -419,7 +419,7 @@ export default function TopicExplanation() {
                             {renderTextWithCodeHighlights(paragraph)}
                           </p>
                         ))}
-                        {section.example && (
+                        {section.example.code && (
                           <div className="p-4 my-6  rounded-md bg-muted ">
                             {/* <pre className="font-mono text-sm">
                                 {section.example}

@@ -64,7 +64,7 @@ Ensure you have the following installed:
 ## Project Structure
 The project is organized as follows:
 ```
-FinalYearProject/
+spark-learn/ (root)
 ├── backend/
 │   ├── lib/         # Contains utility modules and reusable logic
 │   ├── index.ts     # Main server entrypoint using Elysia
@@ -78,6 +78,9 @@ FinalYearProject/
 ```
 
 ---
+
+## Live Link
+The live version of the app is available at [sparklearn.vercel.app](https://sparklearn.vercel.app)
 
 ## Contributing
 1. Fork the repository and create a feature branch.
